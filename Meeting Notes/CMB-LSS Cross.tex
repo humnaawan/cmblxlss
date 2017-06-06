@@ -1,20 +1,24 @@
 \documentclass{article} 
 \usepackage[margin=0.8in]{geometry}
-\usepackage{/Users/Humna/myLaTeXmacros}
+\usepackage{color}
+
+\newcommand{\eq}[1]{\begin{equation}{#1}\end{equation}}
+\newcommand{\clred}[1]{\textcolor{red}{#1}}
+
 \begin{document}
 \large{
 \section*{Meeting Notes: May 30, 17}
 % Based on daily log notes for May 30, 17
 Overall goal: calculate cross-correlations between CMB lensing and LSS.
-\enum{
-\bl Want $C_\ell^{\kappa\kappa}$ which probes $\sigma_8^2$; $C_\ell^{\kappa g}$ which probes $b\sigma_8^2$; $C_\ell^{gg}$ which probes $b^2\sigma_8^2$.
-	\enum{
-	\bl Since deal with galaxies in specific redshift bins, explicitly consider auto- and cross-spectra for the bins.
-	\bl Say $i$th $z$-bin has central redshift $z_i$. Adopt the convention of writing the cross spectrum as $C_\ell^{\kappa i}$ which probes $b(z_i) \sigma_8^2(z_i)$ and $C_\ell^{ii}$ which probes $b^2(z_i)\sigma_8^2(z_i)$. \clR{Should $\sigma_8$ have the $z$-dependence? If yes, if/how does $z$-bin dependence come in through $C_\ell^{\kappa\kappa}$?}
-	}
-\bl Expect coupled systematics due to dust uncertainties to be the biggest source of problems. Need to look at cross-correlations between CMB lensing and dust uncertainties.
-\bl Will need to think about two kinds of dust contributions: 1) MW dust extinguishes background galaxies; its microwave emission affects lensing, and 2) CIB affects lensing and hence correlates with galaxy distribution.
-}
+\begin{itemize}
+\item Want $C_\ell^{\kappa\kappa}$ which probes $\sigma_8^2$; $C_\ell^{\kappa g}$ which probes $b\sigma_8^2$; $C_\ell^{gg}$ which probes $b^2\sigma_8^2$.
+	\begin{itemize}
+	\item Since deal with galaxies in specific redshift bins, explicitly consider auto- and cross-spectra for the bins.
+	\item Say $i$th $z$-bin has central redshift $z_i$. Adopt the convention of writing the cross spectrum as $C_\ell^{\kappa i}$ which probes $b(z_i) \sigma_8^2(z_i)$ and $C_\ell^{ii}$ which probes $b^2(z_i)\sigma_8^2(z_i)$. \clred{Should $\sigma_8$ have the $z$-dependence? If yes, if/how does $z$-bin dependence come in through $C_\ell^{\kappa\kappa}$?}
+	\end{itemize}
+\item Expect coupled systematics due to dust uncertainties to be the biggest source of problems. Need to look at cross-correlations between CMB lensing and dust uncertainties.
+\item Will need to think about two kinds of dust contributions: 1) MW dust extinguishes background galaxies; its microwave emission affects lensing, and 2) CIB affects lensing and hence correlates with galaxy distribution.
+\end{itemize}
 
 % Plan
 % kappa
@@ -44,29 +48,29 @@ where $W_\ell$ is the survey window function.
 
 % Plan
 \subsection*{Plan}
-\enum{
-\bl Use CAMB to get $P(k,z)$. \clR{Does it give $P_l(k,z)$? Otherwise, how to calculate?}
-\bl Use  $P_\ell(k,z)$ to realize $\delta(x, z)$. 
-\bl Find the convergence field using Equation~\ref{eq: kappa break}; will need $W^c(z)$. Find $C_\ell^{\kappa\kappa}$.
-\bl Find $C_\ell^{ii}$ using the realized $\delta(x,z)$.
-\bl Find $C_\ell^{\kappa i}$ using Equation~\ref{eq: C-cross}. For $W^g$, start with assuming its a top-hat in each $z$-bin.
-\bl Give synfast $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$ as the TE fields, which will return a realization of the convergence and density fields as maps.
-\bl Cross-correlate the maps.
-\bl Add OS artifacts to the realized map of LSS. These artifacts are calculate using LSST MAF pipeline.
-\bl Dust artifacts will need to be added to both the convergence and LSS maps. 
-\bl Cross-correlate the with-artifacts maps to see the amount of spurious power.
-}
+\begin{itemize}
+\item Use CAMB to get $P(k,z)$. \clred{Does it give $P_l(k,z)$? Otherwise, how to calculate?}
+\item Use  $P_\ell(k,z)$ to realize $\delta(x, z)$. 
+\item Find the convergence field using Equation~\ref{eq: kappa break}; will need $W^c(z)$. Find $C_\ell^{\kappa\kappa}$.
+\item Find $C_\ell^{ii}$ using the realized $\delta(x,z)$.
+\item Find $C_\ell^{\kappa i}$ using Equation~\ref{eq: C-cross}. For $W^g$, start with assuming its a top-hat in each $z$-bin.
+\item Give synfast $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$ as the TE fields, which will return a realization of the convergence and density fields as maps.
+\item Cross-correlate the maps.
+\item Add OS artifacts to the realized map of LSS. These artifacts are calculate using LSST MAF pipeline.
+\item Dust artifacts will need to be added to both the convergence and LSS maps. 
+\item Cross-correlate the with-artifacts maps to see the amount of spurious power.
+\end{itemize}
 
 % To-Do
 \subsection*{To-Do Before Simons Summer Meeting}
 Goal: have CMB lensing-LSS correlation by Simons meeting (with a simple handle on dust).
-\enum{
-\bl Humna: Look at Baxter+ (SPT/DES), Miyatake+ (Planck/CMASS), Schaan et al.
-\bl Humna: Set up CAMB.
-\bl Mat: Provide $W^c(z)$.
-\bl Humna: Run LSST OS artifacts pipeline at Nside= 1024. No need to get higher-$z$ spectra from Hu as wont be using his data as true LSS but CAMB's. Nelson's mock catalogs have high-$z$ spectra so need to incorporate them to calculate the artifacts for all relevant redshift bins.
-\bl All: Do a literature review to see what has been done in the field so far.
-}
+\begin{itemize}
+\item Humna: Look at Baxter+ (SPT/DES), Miyatake+ (Planck/CMASS), Schaan et al.
+\item Humna: Set up CAMB.
+\item Mat: Provide $W^c(z)$.
+\item Humna: Run LSST OS artifacts pipeline at Nside= 1024. No need to get higher-$z$ spectra from Hu as wont be using his data as true LSS but CAMB's. Nelson's mock catalogs have high-$z$ spectra so need to incorporate them to calculate the artifacts for all relevant redshift bins.
+\item All: Do a literature review to see what has been done in the field so far.
+\end{itemize}
 
 
 
