@@ -10,11 +10,12 @@
 \section*{Meeting Notes: May 30, 17}
 % Based on daily log notes for May 30, 17
 Overall goal: calculate cross-correlations between CMB lensing and LSS.
-\begin{itemize}
-\item Want $C_\ell^{\kappa\kappa}$ which probes $\sigma_8^2$; $C_\ell^{\kappa g}$ which probes $b\sigma_8^2$; $C_\ell^{gg}$ which probes $b^2\sigma_8^2$.
+\begin{itemize}\
+youitem Want $C_\ell^{\kappa\kappa}$ which probes $\sigma_8^2$; $C_\ell^{\kappa g}$ which probes $b\sigma_8^2$; $C_\ell^{gg}$ which probes $b^2\sigma_8^2$.
 	\begin{itemize}
 	\item Since deal with galaxies in specific redshift bins, explicitly consider auto- and cross-spectra for the bins.
 	\item Say $i$th $z$-bin has central redshift $z_i$. Adopt the convention of writing the cross spectrum as $C_\ell^{\kappa i}$ which probes $b(z_i) \sigma_8^2(z_i)$ and $C_\ell^{ii}$ which probes $b^2(z_i)\sigma_8^2(z_i)$. \clred{Should $\sigma_8$ have the $z$-dependence? If yes, if/how does $z$-bin dependence come in through $C_\ell^{\kappa\kappa}$?}
+          \clred{MM: $z$-dependence of $\sigma_8$ comes in through the growth factor. $P(k,z)\approx D^2(z)P(k,z_0)$ and $C_\ell^{\kappa\kappa}$ in turn depends on it through $C_\ell^{\kappa\kappa}=\int dz W^2(z) P(k=\ell/\chi,z)$}
 	\end{itemize}
 \item Expect coupled systematics due to dust uncertainties to be the biggest source of problems. Need to look at cross-correlations between CMB lensing and dust uncertainties.
 \item Will need to think about two kinds of dust contributions: 1) MW dust extinguishes background galaxies; its microwave emission affects lensing, and 2) CIB affects lensing and hence correlates with galaxy distribution.
@@ -49,7 +50,7 @@ where $W_\ell$ is the survey window function.
 % Plan
 \subsection*{Plan}
 \begin{itemize}
-\item Use CAMB to get $P(k,z)$. \clred{Does it give $P_l(k,z)$? Otherwise, how to calculate?}
+\item Use CAMB to get $P(k,z)$. \clred{Does it give $P_l(k,z)$? Otherwise, how to calculate? MM: CAMB gives $P(k,z)$ which is interpolated at $k=\ell/\chi$ by \texttt{orphics.theory.cosmology.LimberCosmology}}
 \item Use  $P_\ell(k,z)$ to realize $\delta(x, z)$. 
 \item Find the convergence field using Equation~\ref{eq: kappa break}; will need $W^c(z)$. Find $C_\ell^{\kappa\kappa}$.
 \item Find $C_\ell^{ii}$ using the realized $\delta(x,z)$.
@@ -57,7 +58,7 @@ where $W_\ell$ is the survey window function.
 \item Give synfast $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$ as the TE fields, which will return a realization of the convergence and density fields as maps.
 \item Cross-correlate the maps.
 \item Add OS artifacts to the realized map of LSS. These artifacts are calculate using LSST MAF pipeline.
-\item Dust artifacts will need to be added to both the convergence and LSS maps. 
+\item Dust artifacts will need to be added to both the convergence and LSS maps. \clred{Dust should be added to a lensed CMB map (which in turn is used to reconstruct CMB convergence). This makes sure the dust contamination enters through the bispectrum $\langle TTg \rangle$ as expected.}
 \item Cross-correlate the with-artifacts maps to see the amount of spurious power.
 \end{itemize}
 
