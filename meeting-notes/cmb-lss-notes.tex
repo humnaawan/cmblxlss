@@ -1,6 +1,7 @@
 \documentclass{article} 
 \usepackage[margin=0.8in]{geometry}
 \usepackage{color}
+\usepackage{hyperref}
 
 \newcommand{\eq}[1]{\begin{equation}{#1}\end{equation}}
 \newcommand{\clred}[1]{\textcolor{red}{#1}}
@@ -47,19 +48,16 @@ We can use Equation~\ref{eq: C-cross} to incorporate the effects of artifacts in
 where $W_\ell$ is the survey window function.
 
 % Plan
-\subsection*{Plan}
+\subsection*{Overall Plan}
 \begin{itemize}
-\item Use CAMB to get $P(k,z)$. \clred{Does it give $P_l(k,z)$? Otherwise, how to calculate? MM: CAMB gives $P(k,z)$ which is interpolated at $k=\ell/\chi$ by \texttt{orphics.theory.cosmology.LimberCosmology}}
-\item Use  $P_\ell(k,z)$ to realize $\delta(x, z)$. 
-\item Find the convergence field using Equation~\ref{eq: kappa break}; will need $W^c(z)$. Find $C_\ell^{\kappa\kappa}$.
-\item Find $C_\ell^{ii}$ using the realized $\delta(x,z)$.
-\item Find $C_\ell^{\kappa i}$ using Equation~\ref{eq: C-cross}. For $W^g$, start with assuming its a top-hat in each $z$-bin.
-\item Give synfast $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$ as the TE fields, which will return a realization of the convergence and density fields as maps.
-\item Cross-correlate the maps.
-\item Add OS artifacts to the realized map of LSS. These artifacts are calculate using LSST MAF pipeline.
-\item Dust artifacts will need to be added to both the convergence and LSS maps. \clred{Dust should be added to a lensed CMB map (which in turn is used to reconstruct CMB convergence). This makes sure the dust contamination enters through the bispectrum $\langle TTg \rangle$ as expected.}
+\item Use \href{https://github.com/msyriac/orphics/blob/1153f3e6b634b780cb7676444b7312df4b2ea7f6/orphics/theory/cosmology.py}{\texttt{orphics}} to find the auto- and cross-correlations using analogs of Equation~\ref{eq: C-cross}, i.e., $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$. For $W^g$, start with assuming its a top-hat in each $z$-bin.
+\item Get realizations of $\kappa$ and density maps using synfast: input $C_\ell^{\kappa\kappa}, C_\ell^{\kappa i}, C_\ell^{ii}$ as the TE fields.
+\item Create a lensed CMB map using the realized $\kappa$ map.
+\item Add dust artifacts to the lensed CMB map and LSS maps. Adding dust to lensing CMB maps makes sure dust contamination enters through the bispectrum $\langle TTg \rangle$ as expected.
+\item Add OS artifacts to the realized map of LSS. These artifacts are calculate using LSST Metric Analysis Framework pipeline.
 \item Cross-correlate the with-artifacts maps to see the amount of spurious power.
 \end{itemize}
+
 
 % To-Do
 \subsection*{To-Do Before Simons Summer Meeting}
