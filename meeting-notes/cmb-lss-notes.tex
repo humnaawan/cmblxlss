@@ -1,10 +1,13 @@
 \documentclass{article} 
 \usepackage[margin=0.8in]{geometry}
 \usepackage{color}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{hyperref}
 
 \newcommand{\eq}[1]{\begin{equation}{#1}\end{equation}}
 \newcommand{\clred}[1]{\textcolor{red}{#1}}
+\newcommand{\done}[1]{\textcolor{ForestGreen}{#1}}
+
 
 \begin{document}
 \large{
@@ -60,12 +63,15 @@ where $W_\ell$ is the survey window function.
 
 
 % To-Do
-\subsection*{To-Do Before Simons Summer Meeting}
-Goal: have CMB lensing-LSS correlation by Simons meeting (with a simple handle on dust).
+\subsection*{To-Do}
 \begin{itemize}
 \item Humna: Look at Baxter+ (SPT/DES), Miyatake+ (Planck/CMASS), Schaan et al.
-\item Humna: Set up CAMB.
-\item Mat: Provide $W^c(z)$.
+\item \done{Humna: Set up CAMB.}
+\item \done{Humna: Set up \texttt{orphics} to get $W^c(z)$.}
+\item Humna: update the current work to use \texttt{orphics} for top hat LSS window function. Compare results (current) without the pipeline,
+\item Need to figure out dust systematics for both CMB optical frequencies. Who to talk to? David Alonso; Alex Van Engelene, Reza Ansari?
+\item Humna: provide Mat with $\kappa$ and dust maps.
+\item Mat: Create the lensed CMB map and return reconstructed $\kappa$ map.
 \item Humna: Run LSST OS artifacts pipeline at Nside= 1024. No need to get higher-$z$ spectra from Hu as wont be using his data as true LSS but CAMB's. Nelson's mock catalogs have high-$z$ spectra so need to incorporate them to calculate the artifacts for all relevant redshift bins.
 \item All: Do a literature review to see what has been done in the field so far.
 \end{itemize}
