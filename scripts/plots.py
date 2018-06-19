@@ -29,15 +29,19 @@ def plot_cls_dict(cls, cross_convention= True,
         wanted_bin_edges= np.arange(0, lmax, bin_width)
         binner1d= bin1D(wanted_bin_edges)
     
+    markers= ['d', 'x', '.', '+', ',', '*']
+    nspec= len(cls.keys())
+    
     plt.clf()
-    for key in cls:
+    for i, key in enumerate(cls):
         if binned:
             ell_toplot, cl_toplot= binner1d.binned(np.arange(np.size(cls[key])), cls[key])
         else:
             ell_toplot, cl_toplot= np.arange(np.size(cls[key])), cls[key]
         # decide on the convention
         if cross_convention:
-            plt.plot(ell_toplot, cl_toplot*ell_toplot, 'o-', label= key)
+            plt.plot(ell_toplot, cl_toplot*ell_toplot, label= key)
+            plt.scatter(ell_toplot, cl_toplot*ell_toplot, marker= markers[i%nspec])
         else:
             plt.plot(ell_toplot, (cl_toplot*ell_toplot*(ell_toplot+1))/2.0/np.pi, 'o-', label= key)
     plt.xlabel(r'$\ell$', fontsize=18)
