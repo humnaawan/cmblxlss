@@ -7,223 +7,285 @@ import os
 from collections import OrderedDict
 import time
 from optparse import OptionParser
-
-#--------------------------------------------------------------------------------------
+from orphics import cosmology
+# ------------------------------------------------------------------------------
 # imports from this folder
-from utils_plot import plot_cls_dict
+from utils_plot import plot_cls_dict, plot_mollview
 from utils_analysis import *
-#--------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 parser = OptionParser()
 # required params
 parser.add_option('--outdir', dest='main_outdir',
                   help='Output directory')
-parser.add_option('--halocat-path', dest='halocat_filepath',
-                  help='Path to the halo catalog')
-parser.add_option('--convergence-path', dest='convergence_filepath',
-                  help='Path to the file containing convergence map')
-parser.add_option('--cmb-sim-tag', dest='simtag',
-                  help='Tag to identify simulation realization for the halo catalog and the convergence, etc.')
-parser.add_option('--lsst-mask-path', dest='lsst_completeness_path',
-                  help='Path to the opsim output with lsst completeness map')
-parser.add_option('--lsstdata-tag', dest='lsstdata_tag',
-                  help='Tag to identify lsst map')
-# optional
-parser.add_option('-q', '--quiet',
-                  action='store_false', dest='verbose', default=True,
-                  help='Do not print stuff out')
-parser.add_option('--nside', dest='nside', type='int',
-                  help='HEALPix resolution parameter.', default=256)
+parser.add_option('--lensed-cmb-path', dest='lensed_cmb_map_path',
+                  help='Path to the file containing lensed cmb map')
+parser.add_option('--cosmology-path', dest='cosmo_path',
+                  help='Path to orphics cosmology')
+parser.add_option('--kappa-norm-path', dest='kappa_norm_path',
+                  help='Path to the file containing the normalization of the kappa alms')
+parser.add_option('--kappa-alm-theory_path', dest='kappa_alm_theory_path',
+                  help='Path to the file containing the theory kappa alms')
+parser.add_option('--gcals-path', dest='gcls_path',
+                  help='Path to the file containing the theory gk and kk cls')
+parser.add_option('--fg-map-path', dest='fg_map_path',
+                  help='Path to the file containing the foregrounds map')
+parser.add_option('--lsst-path', dest='lsst_path',
+                  help='Path to the npz file containing the lsst opsim output')
+parser.add_option('--lsstdata-tag', dest='lsst_data_tag',
+                  help='Tag to identify lsst data')
 parser.add_option('--lmax', dest='lmax', type='int',
-                  help='Maximum multipole to consider', default=1000)
-parser.add_option('--cross_corr_rec',
-                  action='store_false', dest='cross_corr_rec', default=False,
-                  help='Cross-correlate things with reconstructions. Else with convergence map. ')
+                  help='Maximum multipole to consider')
+# optional
 parser.add_option('--completeness-thresh', dest='completeness_threshold',
                   help='Threshold on deltaNByN to define the binary (0/1) completeness map',
                   default=-0.2)
 parser.add_option('--smoothing-fwhm', dest='smoothing_fwhm',
                   help='FWHM (in radians) of the gaussian beam used to smooth the halo density map',
-                  default=np.radians(2/60.))
-parser.add_option('--plot-diagnostic',
-                  action='store_false', dest='plot_data_diagnostics', default=False,
-                  help='Plot out diagnostics on the halo catalog data.')
+                  default=np.radians(1.))
 #--------------------------------------------------------------------------------------
 # parse the options
 (options, args) = parser.parse_args()
-verbose = options.verbose
-nside = options.nside
-lmax = options.lmax
 main_outdir = options.main_outdir
-simtag = options.simtag
-halocat_filepath = options.halocat_filepath
-cross_corr_convergence = not options.cross_corr_rec
-convergence_filepath = options.convergence_filepath
-lsst_completeness_path = options.lsst_completeness_path
-lsstdata_tag = options.lsstdata_tag
+lensed_cmb_map_path = options.lensed_cmb_map_path
+cosmo_path = options.cosmo_path
+kappa_norm_path = options.kappa_norm_path
+kappa_alm_theory_path = options.kappa_alm_theory_path
+gcls_path = options.gcls_path
+fg_map_path = options.fg_map_path
+lsst_path = options.lsst_path
+lsst_data_tag = options.lsst_data_tag
+lmax = options.lmax
 completeness_threshold = options.completeness_threshold
 smoothing_fwhm = options.smoothing_fwhm
-plot_data_diagnostics = options.plot_data_diagnostics
 
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 time0 = time.time()
-
+# set up the readme
 readme = ''
-readme_tag = 'nside%s_lmax%s_takahashi-%s'%(nside, lmax, simtag)
-
-halocat_tag = halocat_filepath.split('_')[-1].split('.csv')[0]
-outdir = '%s/output_%s_halocat-%s_lsst-%s'%(main_outdir, readme_tag,
-                                            halocat_tag,
-                                            lsstdata_tag)
+readme_tag = 'lmax%s'%(lmax)
+# set up the outdir
+outdir = '%s/output_%s_lsst-%s'%(main_outdir, readme_tag, lsst_data_tag)
 if not os.path.exists(outdir): os.makedirs(outdir)
-
-update = '\nOutput directory: %s\n'%outdir.split(main_outdir)[1]
-readme += update
-if verbose: print(update)
-
-#--------------------------------------------------------------------------------------
-# dictionary that will contain all the maps we care about
-maps = OrderedDict()
+# update readme
+readme = print_update(update='\nOutput directory: %s\n'%outdir.split(main_outdir)[1],
+                      readme=readme)
+# set up dictionary that will contain all the spectra we care about
 c_ells = OrderedDict()
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-# get galaxy density map based on the halo catalogs
-update = 'Creating the halo galaxy density map ... \n'
-readme += update
-if verbose: print(update)
+# set up the ells
+ells = np.arange(0, lmax)
+mlmax = lmax + 1000
+# -----------------------------------------------
+# read in the lense cmb map
+readme = print_update(update='\n## Reading in lensed cmb map ... \n',
+                      readme=readme)
+lensed_cmb_map = hp.read_map(lensed_cmb_map_path)
+# get the nside
+nside_target = hp.npix2nside(len(lensed_cmb_map))
+# plot
+filename = plot_mollview(map_in=lensed_cmb_map,
+                         title='lensed_cmb_map',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='lensed_cmb_map',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved lensed cmb map in %s\n'%(filename),
+                      readme=readme)
+# -----------------------------------------------
+# read in the fg map
+readme = print_update(update='\n## Reading in foregrounds map ... \n',
+                      readme=readme)
+fg_map = hp.read_map(fg_map_path)
+# save the fg map
+filename = plot_mollview(map_in=fg_map,
+                         title='fg_map',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='fg_map',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved fg map in %s\n'%(filename),
+                    readme=readme)
+# rotate the map
+readme = print_update(update='Rotating the map from galactic to equatorial coords ... ',
+                      readme=readme)
+r = hp.rotator.Rotator(coord=['G','C']) # rotator object: G=galactic --> C=equatorial
+fg_map = rotate_map(r, fg_map)  # rotate the map
+# save the fg map
+filename = plot_mollview(map_in=fg_map,
+                         title='fg_map_rotated',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='fg_map_rotated',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved rotated fg map in %s\n'%(filename),
+                      readme=readme)
+# -----------------------------------------------
+# get some theory stuff from orphics
+theory = cosmology.loadTheorySpectraFromCAMB(cosmo_path,
+                                             get_dimensionless=False)
+cl_tt_theory = theory.lCl(XYType='TT', ell=ells)
+c_ells[r'$\kappa\kappa$ theory'] = theory.gCl('kk', ells)
 
-out = get_gal_density_map(halocat_filepath=halocat_filepath,
-                          halocat_tag=halocat_tag, nside=nside,
-                          plot_data_diagnostics=plot_data_diagnostics,
-                          outdir=outdir, verbose=verbose)
-gal_density_key = list(out[0].keys())[0]
-maps.update(out[0])
-readme += out[1]
+# -----------------------------------------------
+# read in theory spectra for gg and kg
+gcls = np.genfromtxt(gcls_path)
+#ells_gcls = gcls[:, 0]
+c_ells[r'$gg$ theory'] = gcls[:, 1][0: lmax]
+c_ells[r'$\kappa g$ theory'] = gcls[:, 2][0: lmax]
+# -----------------------------------------------
+# read in theory alms for phi (related to kappa)
+readme = print_update(update='\n## Reading in theory phi alms ... \n',
+                      readme=readme)
+kappa_theory_phi_alms = hp.read_alm(kappa_alm_theory_path)
+kappa_theory_phi_alms = kappa_theory_phi_alms.astype(np.complex128)
+kappa_theory_map = hp.alm2map(kappa_theory_phi_alms, nside=nside_target)
+kappa_theory_phi_alms_red = hp.map2alm(kappa_theory_map, lmax=mlmax)
+kappa_theory_filt = hp.almxfl(alm=kappa_theory_phi_alms_red, fl=ells*(ells+1)/2)
+# -----------------------------------------------
+# read in the normalization for reconstructed alms
+readme = print_update(update='\b## Reading in kappa normalization ... \b',
+                      readme=readme)
+kappa_norm = np.genfromtxt(kappa_norm_path)[:, 1]
+# -----------------------------------------------
+# get the lsst dn/n map and the completeness mask (binary; apodized)
+out = get_lsst_maps(data_file=lsst_path, data_tag=lsst_data_tag,
+                    data_label='dNbyN', nside_out=nside_target,
+                    completeness_threshold=completeness_threshold,
+                    smoothing_fwhm=smoothing_fwhm, outdir=outdir,
+                    plot_interm=True)
+lsst_mask_smoothed, lsst_data_map, lsst_fsky, readme = out
+# -----------------------------------------------
+# construct correlated galaxy density alms
+readme = print_update(update='\n## Generating correlated density field ... \n',
+                      readme=readme)
+gal_density_alm = generate_correlated_alm(input_alm_f1=kappa_theory_filt,
+                                          Clf1f1=c_ells[r'$\kappa\kappa$ theory'],
+                                          Clf2f2=c_ells[r'$gg$ theory'],
+                                          Clf1f2=c_ells[r'$\kappa g$ theory'],
+                                          seed=1)
+# construct the map from the alms
+gal_density_map = hp.alm2map(gal_density_alm, nside=nside_target)
+# plot
+filename = plot_mollview(map_in=gal_density_map,
+                         title='correlated galaxy density',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='galdensity',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(filename),
+                      readme=readme)
+# module the galaxy density map with fake LSS (fluctuations just multiply)
+gal_density_map_mod = gal_density_map * lsst_data_map
+# plot
+filename = plot_mollview(map_in=gal_density_map_mod,
+                         title='modulated correlated galaxy density',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='modulated-galdensity',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
+                      readme=readme)
+gal_density_alm_mod = hp.map2alm(gal_density_map_mod, lmax=mlmax)
+# -----------------------------------------------
+# set up the filter for the cmb reconstruction
+kappa_filter = 1/cl_tt_theory
+kappa_filter[ells < 300] = 0
+# -----------------------------------------------
+# baseline reconstruction
+readme = print_update(update='\n## Reconstructing kappa (no fg or mask) ... \n',
+                      readme=readme)
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                  lsst_mask_map=None, fg_map=None)
+kappa_alms_normed, readme = out
+# -----------------------------------------------
+# reconstruction with foregrounds
+readme = print_update(update='\n## Reconstructing kappa with fg ... \n',
+                      readme=readme)
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                  lsst_mask_map=None, fg_map=fg_map)
+kappa_alms_normed_fg, readme = out
+# -----------------------------------------------
+# reconstruction with foregrounds + lsst mask
+readme = print_update(update='\n## Reconstructing kappa with fg & lsst mask ... \n',
+                      readme=readme)
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                  lmax=lmax, mlmax=mlmax, outdir=outdir,
+                                  lsst_mask_map=lsst_mask_smoothed,
+                                  fg_map=fg_map)
+kappa_alms_normed_fg_masked, readme = out
+# -----------------------------------------------
+# calculate correlations
+readme = print_update(update='\n## Calculating correlations ... \n',
+                      readme=readme)
+# autos
+c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa\kappa$ w/ fg'] = hp.alm2cl(kappa_alms_normed_fg, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_masked, lmax=lmax)[0:lmax]/lsst_fsky
+# cross correlation
+c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ fg + lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
 
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-conv_recon_tag = ''
-if cross_corr_convergence:
-	# read in the Takahashi convergence map
-	update = 'Reading in the convergence map ... \n'
-	readme += update
-	if verbose: print(update)
-	conv_recon_tag = 'convergence'
-	out = get_convergence_map(convergence_filepath=convergence_filepath,
-                              wldata_tag=simtag, nside=nside,
-                              outdir=outdir)
-	completeness_key = list(out[0].keys())[0]
-	maps.update(out[0])
-	readme += out[1]
-else:
-	# read in reconstruction
-	raise ValueError('reconstruction read-in not developed rn.')
-	conv_recon_tag = 'reconstruction'
-
-cmb_key = list(out[0].keys())[0]
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-# create lsst completeness map
-update = 'Reading in the lsst completeness map ... \n'
-readme += update
-if verbose: print(update)
-out = get_lsst_completeness_map(lsst_completeness_path=lsst_completeness_path,
-                                lsstdata_tag=lsstdata_tag,
-                                completeness_threshold=completeness_threshold,
-                                nside=nside, outdir=outdir)
-completeness_key = list(out[0].keys())[0]
-maps.update(out[0])
-readme += out[1]
-fsky = out[2]
-
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-# get a smoothed galaxy density map
-update = 'Finding a smoothed galaxy density map ... \n'
-readme += update
-if verbose: print(update)
-out = get_smoothed_gal_density_map(map_in=maps[gal_density_key],
-                                   fwhm=smoothing_fwhm,
-                                   outdir=outdir, data_tag=gal_density_key)
-
-smoothed_gal_density_key = '%s_smoothed' % gal_density_key
-maps[smoothed_gal_density_key] = out[0]
-readme += out[1]
-
-#--------------------------------------------------------------------------------------
-update = 'Maps so far: %s\n'%(maps.keys())
-readme += update
-if verbose: print(update)
-non_comp_keys = [f for f in maps.keys() if f != completeness_key]
-#--------------------------------------------------------------------------------------
-# modulate the original/smoothed halo density and convergence/recon. map
-update = 'Modulating the galaxy density and %s maps ... \n' % conv_recon_tag
-readme += update
-if verbose: print(update)
-
-for map_key in non_comp_keys:
-    out = modulate_map(data_map=maps[map_key],
-                       completeness_map=maps[completeness_key],
-                       data_tag=map_key, outdir=outdir)
-    maps['%s_modulated'%map_key] = out[0]
-    readme += out[1]
-
-update = '\nMaps so far now, after modulation: %s\n'%(maps.keys())
-readme += update
-if verbose: print(update)
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-#--------------------------------------------------------------------------------------
-# calculate the cross-correlations
-update = '\nCalculating the cross power spectra ... \n'
-readme += update
-if verbose: print(update)
-key1, key2 = gal_density_key, cmb_key
-c_ells['True: %s x %s'%(key1, key2)] = hp.anafast(maps[key1], maps[key2], lmax=lmax)
-
-key1, key2= '%s_modulated'%gal_density_key, '%s_modulated'%cmb_key
-c_ells['%s x %s'%(key1, key2)] = hp.anafast(maps[key1], maps[key2], lmax=lmax)/fsky
-
-key1, key2= smoothed_gal_density_key, cmb_key
-c_ells['%s x %s'%(key1, key2)] = hp.anafast(maps[key1], maps[key2], lmax=lmax)
-
-key1, key2= '%s_modulated'%smoothed_gal_density_key, '%s_modulated'%cmb_key
-c_ells['%s x %s'%(key1, key2)] = hp.anafast(maps[key1], maps[key2], lmax=lmax)/fsky
-
-# plot the cross-correlations
-filename = plot_cls_dict(cls_in=c_ells, outdir=outdir, file_tag='',
+# -----------------------------------------------
+# plot the cross-correlations in sets
+readme = print_update(update='\n## Plotting spectra ... \n',
+                      readme=readme)
+# first plot the auto spectra for checks
+c_ells_to_plot = {}
+for key in [f for f in c_ells.keys() if f.__contains__(r'\kappa\kappa')]:
+    c_ells_to_plot[key] = c_ells[key]
+# plot
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kk-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True,
                          binned=False, bin_width=20, lmax=lmax)
-update = 'Saved cross-spectra plot in %s.\n'%filename
-readme += update
-if verbose: print(update)
-
-# plot the binned cross-correlations
-filename = plot_cls_dict(cls_in=c_ells, outdir=outdir, file_tag='',
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# plot binned
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kk-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True,
                          binned=True, bin_width=50, lmax=lmax)
-update = 'Saved cross-spectra plot in %s.\n'%filename
-readme += update
-if verbose: print(update)
-
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# -----------------------------------------------
+# now plot the cross correlations
+c_ells_to_plot = {}
+c_ells_to_plot[r'$\kappa g$ theory'] = c_ells[r'$\kappa g$ theory']
+for key in [f for f in c_ells.keys() if f.__contains__(r'correlated $g$')]:
+    c_ells_to_plot[key] = c_ells[key]
+# plot
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True,
+                         sci_yticks=True,
+                         binned=False, bin_width=20, lmax=lmax)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# binned
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True,
+                         sci_yticks=True,
+                         binned=True, bin_width=50, lmax=lmax)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# -----------------------------------------------
 # save the corrs
 filename = 'cross_specs.csv'
 pd.DataFrame(c_ells).to_csv('%s/%s'%(outdir, filename), index=False)
-update = 'Saved cross-spectra in %s.\n' % filename
-readme += update
-if verbose: print(update)
-
-update = '\nTime taken for the whole thing: %.3f min\n' % ((time.time()-time0)/60.)
-readme += update
-if verbose: print(update)
+# update readme
+readme = print_update(update='Saved cross-spectra in %s.\n' % filename,
+                      readme=readme)
+readme = print_update(update='\nTime taken for the whole thing: %.3f min\n' % ((time.time()-time0)/60.),
+                      readme=readme)
 
 readme_file = open('%s/readme_%s.txt' % (outdir, readme_tag), 'a')
 readme_file.write(readme)

@@ -4,212 +4,229 @@ import healpy as hp
 import numpy as np
 import pandas as pd
 import time
-from orphics.catalogs import CatMapper
+from healpy import pixelfunc
+from falafel import qe
+from pixell import enmap
 # ------------------------------------------------------------------------------
 # imports from this folder
-from utils_plot import plot_seaborn_distplot, plot_seaborn_jointplot, plot_mollview, plot_power_spectrum
+from utils_plot import plot_mollview
 from settings import rcparams
 # set up the plotting params
 for key in rcparams: mpl.rcParams[key] = rcparams[key]
 # ------------------------------------------------------------------------------
-
-__all__= ['get_gal_density_map', 'get_convergence_map',
-          'get_lsst_completeness_map', 'modulate_map', 'get_smoothed_gal_density_map']
-# --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
-def get_gal_density_map(halocat_filepath, halocat_tag, nside,
-                        plot_data_diagnostics, outdir, verbose=True):
-	time0 = time.time()
-	readme = '\n*** get_gal_density_map function ***\n'
-	map_dict = {}
-	# Read in the halo catalog. Plots some diagnostic plots.
-	halocat_data = pd.read_csv(halocat_filepath)
-	readme += 'Read in halo cat. data. Shape: %s\n'%(np.shape(halocat_data),)
-
-	# add ra, dec columns based on theta, phi columns on the image plane
-	halocat_data['ra'] = np.degrees(halocat_data['phi_i'])
-	halocat_data['dec'] = np.degrees(np.pi/2.0 - halocat_data['theta_i'])
-	readme += 'Added ra, dec cols.\n'
-
-	if plot_data_diagnostics:
-		filenames = plot_seaborn_distplot(data_dict=halocat_data,
-                                          keys_to_plot=list(halocat_data.keys()),
-                                          outdir=outdir,
-                                          file_tag='%s'%halocat_tag,
-                                          save_plot=True, show_plot=False)
-		filename = plot_seaborn_jointplot(x_in=halocat_data['ra'],
-                                          y_in=halocat_data['dec'],
-                                          outdir=outdir,
-                                          file_tag='%s'%halocat_tag,
-                                          save_plot=True, show_plot=False)
-		readme += '\nSaved diagnostic plots:\n%s\n\n'%(filenames + [filename])
-
-	#--------------------------------------------------------------------------------------
-	# Populate the galaxies on HP map
-	halocat_catmap = CatMapper(ras_deg=halocat_data['ra'],
-                               decs_deg=halocat_data['dec'], nside=nside, verbose=verbose)
-	readme += 'Populated the halo catalog galaxies on an hp map with nside %s\n'%nside
-
-	filename = plot_mollview(map_in=halocat_catmap.counts,
-                             title='halo catalog: galaxy counts',
-                             data_label='counts',
-                             outdir=outdir,
-                             file_tag='%s'%halocat_tag,
-                             save_plot=True,show_plot=False)
-	readme += 'Saved mollview plot for galaxy counts in %s\n'%(filename)
-
-	# get galaxy density
-	map_dict['halocat_delta'] = ( halocat_catmap.counts / halocat_catmap.counts.mean() )-1.
-
-	# plot skymap
-	filename = plot_mollview(map_in=map_dict['halocat_delta'],
-                             title='halocat_delta_map',
-                             data_label='dNbyN',
-                             outdir=outdir,
-                             file_tag='%s'%halocat_tag,
-                             save_plot=True, show_plot=False)
-	readme += 'Saved mollview plot for galaxy density in %s\n'%(filename)
-
-	# power spectrum of the overdensity
-	filename = plot_power_spectrum(map_in=map_dict['halocat_delta'],
-                                   lmax=4*nside, title='halocat_delta',
-                                   outdir=outdir, file_tag='%s'%halocat_tag,
-                                   return_cls=False,
-                                   save_plot=True, show_plot=False)
-	readme += 'Saved powerspectrum for galaxy density in %s\n'%(filename)
-
-	readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
-	return [map_dict, readme]
-
-# --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
-def get_convergence_map(convergence_filepath, wldata_tag, nside, outdir):
-	time0 = time.time()
-	readme = '\n*** get_convergence_map function ***\n'
-	# read in the data
-	datain = open(convergence_filepath,'rb')
-	nres = np.fromfile(datain, count=1, dtype=np.int32)[0] # nside = 2^nres
-	wl_data = np.fromfile(datain, dtype=np.float32)
-	datain.close()
-
-	# order of things based on the provided Fortran code that's supposed to help read in the file
-	# http://cosmo.phys.hirosaki-u.ac.jp/takahasi/allsky_raytracing/dat2fits.f90
-	npix = hp.nside2npix(nside=2**nres)
-
-	readme += 'WL data read in: npix= %s ; shape(arr): %s\n'%(npix, np.shape(wl_data),)
-
-	if (len(wl_data)!= 4.*npix):
-		readme += '!!!!! there are more entries in the .dat file than for 4 healpix maps!?!?!?!\n'
-
-	maps = {}
-	maps['kmap'] = wl_data[0:npix]
-	maps['shear1'] = wl_data[npix:2*npix]
-	maps['shear2'] = wl_data[2*npix:3*npix]
-	maps['rotation'] = wl_data[3*npix:4*npix]
-
-	# check to make sure the completenes map is the same nside as wanted
-	wl_nside = 2**nres
-	if (wl_nside != nside):
-		readme+='Converting the read-in map from nside %s to nside %s\n'%(wl_nside, nside)
-		for key in maps:
-			maps[key] = hp.ud_grade(map_in=maps[key], nside_out=nside)
-			readme +='Conversion of the %s map done.\n'%key
-
-	for key in maps:
-		# save skymap
-		filename = plot_mollview(map_in=maps[key], title=key, data_label='',
-                                 outdir=outdir, file_tag='%s_%s'%(key, wldata_tag),
-                                 save_plot=True, show_plot=False)
-		readme += 'Saved mollview plot for %s in %s\n'%(key, filename)
-	readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
-	return [{'convergence': maps['kmap']}, readme]
-
-# --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
-def get_lsst_completeness_map(lsst_completeness_path, lsstdata_tag,
-                              completeness_threshold, nside, outdir):
-	time0 = time.time()
-	readme = '\n*** get_lsst_completeness_map function ***\n'
-
-	lsst_completeness = np.load(lsst_completeness_path)
-
-	# plot skymap
-	filename = plot_mollview(map_in=lsst_completeness['metricValues'],
-                             title=lsstdata_tag,
-                             data_label='',
-                             outdir=outdir,
-                             file_tag='%s'%lsstdata_tag,
-                             save_plot=True, show_plot=False)
-	readme += 'Saved mollview lsst galaxy density map in %s\n'%(filename)
-
-	# Construct a completeness map based on the lsst galaxy density map
-	map_dict = {}
-	map_dict['lsst_completeness'] = np.zeros(len(lsst_completeness['metricValues']))
-	ind= np.where((lsst_completeness['metricValues'] > completeness_threshold) & \
-	              (lsst_completeness['mask'] == False))[0]
-	map_dict['lsst_completeness'][ind] = 1.
-
-	# plot skymap of the completeness map
-	filename = plot_mollview(map_in=map_dict['lsst_completeness'],
-                             title='completeness map: threshold %s'%completeness_threshold,
-                             data_label='',
-                             outdir=outdir,
-                             file_tag='completness_%s'%lsstdata_tag,
-                             save_plot=True, show_plot=False)
-	readme += 'Saved mollview lsst completeness map in %s\n'%(filename)
-
-	# check to make sure the completenes map is the same nside as wanted
-	lsst_nside = hp.npix2nside(lsst_completeness['slicerShape'])
-	if (lsst_nside != nside):
-		readme += 'Converting the completness map from nside %s to nside %s\n'%(lsst_nside, nside)
-		map_dict['lsst_completeness'] = hp.ud_grade(map_in=map_dict['lsst_completeness'],
-                                                    nside_out=nside)
-		readme +='Conversion successful.\n'
-
-	fsky = float(len(lsst_completeness['mask'][lsst_completeness['mask'] == False]))/len(lsst_completeness['metricValues'])
-	readme += 'fsky: %s\n'%(fsky)
-
-	readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
-	return [map_dict, readme, fsky]
-
-# --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
-def modulate_map(data_map, completeness_map, data_tag, outdir):
+__all__= ['print_update', 'get_lsst_maps', 'get_reconstructed_kappa_alm',
+          'generate_correlated_alm', 'rotate_map']
+# ------------------------------------------------------------------------------
+def print_update(update, readme):
+    print(update)
+    return readme + update
+# ------------------------------------------------------------------------------
+def get_lsst_maps(data_file, data_tag, data_label, nside_out,
+                  completeness_threshold, smoothing_fwhm, outdir,
+                  plot_interm=True):
     time0 = time.time()
-    readme = '\n*** modulate_map function for %s ***\n'%data_tag
-    
-    if (len(data_map) != len(completeness_map)):
-        err = 'Input data_map and completeness_map must be of the same length.'
-        err += ' Not: %s vs. %s'%(len(data_map), len(completeness_map))
-        raise ValueError(err)
-    mod_map = data_map*completeness_map
-    # plot skymap of the modulated map
-    filename = plot_mollview(map_in=mod_map,
+    readme = '\n*** Running get_lsst_maps function ***\n'
+    # read in the data
+    data_in = np.load(data_file)
+    lsst_nside = hp.npix2nside(data_in['slicerShape'])
+    # see if need to plot intermediate plots
+    if plot_interm:
+        # plot skymap of the input data
+        filename = plot_mollview(map_in=data_in['metricValues'],
+                                 title='%s : read in'%(data_tag),
+                                 data_label=data_label,
+                                 outdir=outdir,
+                                 file_tag='%s_%s'%(data_tag, data_label),
+                                 save_plot=True, show_plot=False)
+        # update readme
+        readme = print_update(update='Saved mollview map of read-in data in %s\n'%(filename),
+                              readme=readme)
+    # -----------------------------------------------
+    # Construct a completeness map based on the input map
+    mask = np.zeros(len(data_in['metricValues']))
+    ind = np.where((data_in['metricValues'] > completeness_threshold) & \
+                (data_in['mask'] == False))[0]
+    mask[ind] = 1.
+    # see if nee to plot intermediate plots
+    if plot_interm:
+        # plot skymap of the completeness map
+        filename = plot_mollview(map_in=mask,
+                                 title='completeness map: threshold %s'%completeness_threshold,
+                                 data_label='',
+                                 outdir=outdir,
+                                 file_tag='lsstmask_%s'%(data_tag),
+                                 save_plot=True, show_plot=False)
+        readme = print_update(update='Saved mollview lsst completeness map in %s\n'%(filename),
+                              readme=readme)
+    # -----------------------------------------------
+    # check to make sure the completenes map is the same nside as wanted
+    if (lsst_nside != nside_out):
+        readme = print_update(update='Converting lsst maps from nside %s to nside %s\n'%(lsst_nside, nside_out),
+                              readme=readme)
+        mask = hp.ud_grade(map_in=mask, nside_out=nside_out)
+        data_map = hp.ud_grade(map_in=data_in['metricValues'], nside_out=nside_out)
+    # -----------------------------------------------
+    # smooth the mask
+    readme = print_update(update='Smoothing the mask with fwhm %s radians\n'%(smoothing_fwhm),
+                          readme=readme)
+    mask_smoothed = hp.smoothing(mask, fwhm=smoothing_fwhm)
+    # -----------------------------------------------
+    # now plot the to-output maps
+    # mask
+    filename = plot_mollview(map_in=mask_smoothed,
+                             title='apodized completeness mask',
+                             data_label=data_label,
+                             outdir=outdir,
+                             file_tag='%s_apodized_lsstmask'%(data_tag),
+                             save_plot=True, show_plot=False)
+    readme = print_update(update='Saved the binary apodized mask in %s\n'%(filename),
+                          readme=readme)
+    # data map
+    filename = plot_mollview(map_in=data_map,
                              title=data_tag,
                              data_label='',
                              outdir=outdir,
-                             file_tag='modulated_%s'%data_tag,
+                             file_tag='%s_%s'%(data_tag, data_label),
                              save_plot=True, show_plot=False)
-    readme += 'Saved mollview plot of the modulated map in %s\n'%(filename)
-    ### need to make these masked arrays ..
-    return [mod_map, readme]
+    readme = print_update(update='Saved the %s map in %s\n'%(data_label, filename),
+                          readme=readme)
+    # -----------------------------------------------
+    # now calculate the fsky
+    fsky = float(len(data_in['mask'][data_in['mask'] == False]))/len(data_in['metricValues'])
+    readme = print_update(update='fsky: %s\n'%(fsky),
+                          readme=readme)
+    # update readme
+    readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
+    return [mask_smoothed, data_map, fsky, readme]
 
-# --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
-def get_smoothed_gal_density_map(map_in, fwhm, outdir, data_tag):
-	# fwhm in radian
-	time0 = time.time()
-	readme = '\n*** get_smoothed_gal_density_map function ***\n'
-	map_smoothed = hp.smoothing(map_in, fwhm=fwhm)
+# ------------------------------------------------------------------------------
+def get_reconstructed_kappa_alm(lensed_cmb_map, kappa_filter, kappa_norm,
+                                lmax, mlmax, outdir,
+                                lsst_mask_map=None, fg_map=None):
+    time0 = time.time()
+    readme = '\n*** Running get_reconstructed_kappa_alm function ***\n'
+    file_tag = 'lensed_cmb_map'
+    # -----------------------------------------------
+    # see if need to incorporate the foregrounds map to the lensed map
+    if fg_map is not None:
+        # add the fg map to lensed cmb
+        lensed_cmb_map += fg_map
+        # update file tag
+        file_tag += '_fg'
+        # create the plot
+        filename = plot_mollview(map_in=lensed_cmb_map,
+                                 title=file_tag,
+                                 data_label='',
+                                 outdir=outdir,
+                                 file_tag=file_tag,
+                                 save_plot=True, show_plot=False)
+        readme = print_update(update='Saved lensed cmb map with fg in %s\n'%(filename),
+                              readme=readme)
+    # -----------------------------------------------
+    # see if need to incorporate the binary mask
+    if lsst_mask_map is not None:
+        # add the fg map to lensed cmb
+        lensed_cmb_map *= lsst_mask_map
+        # update file tag
+        file_tag += '_xmask'
+        # create the plot
+        filename = plot_mollview(map_in=lensed_cmb_map,
+                                 title=file_tag,
+                                 data_label='',
+                                 outdir=outdir,
+                                 file_tag=file_tag,
+                                 save_plot=True, show_plot=False)
+        readme = print_update(update='Saved lensed cmb map with fg in %s\n'%(filename),
+                              readme=readme)
+    # -----------------------------------------------
+    # now convert to alms
+    lensed_cmb_alms = hp.map2alm(lensed_cmb_map, lmax=lmax)
+    # -----------------------------------------------
+    # filter the alms
+    readme = print_update(update='Filtering lensed_cmb_map alms ... ',
+                          readme=readme)
+    lensed_cmb_alms_filtered = hp.almxfl(alm=lensed_cmb_alms, fl=kappa_filter)
+    # -----------------------------------------------
+    # set up the geometry for full fsky reconstruction
+    shape, wcs = enmap.fullsky_geometry(res=np.deg2rad(1.7/60.))
+    # -----------------------------------------------
+    # do the reconstruction
+    readme = print_update(update='Reconstructing kappa ... ', readme=readme)
+    kappa_alms, _ = qe.qe_tt(shape=shape, wcs=wcs,
+                             Xalm=lensed_cmb_alms, Yalm=lensed_cmb_alms_filtered, do_curl=False,
+                             mlmax=mlmax, lmax_x=lmax, lmax_y=lmax)
+    # -----------------------------------------------
+    # normalize with input normalization
+    kappa_alms_normed = hp.almxfl(alm=kappa_alms, fl=kappa_norm)
+    # update readme
+    readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
 
-	# plot skymap of the modulated map
-	filename = plot_mollview(map_in=map_smoothed,
-                             title='smoothed galaxy density',
-                             data_label='',
-                             outdir=outdir,
-                             file_tag='smoothed_%s'%data_tag,
-                             save_plot=True, show_plot=False)
-	readme += 'Saved mollview plot of the smoothed galaxy density map in %s\n'%(filename)
-	readme += '\nTime taken: %.3f min\n\n'%((time.time()-time0)/60.)
+    return [kappa_alms_normed, readme]
 
-	return [map_smoothed, readme]
+# ------------------------------------------------------------------------------
+def generate_correlated_alm(input_alm_f1, Clf1f1, Clf2f2, Clf1f2, seed=None):
+    correlated = hp.almxfl(input_alm_f1, Clf1f2/Clf1f1)
+    ps_noise = Clf2f2 - np.nan_to_num(Clf1f2**2/Clf1f1)
+
+    assert np.all(ps_noise[2:] >= 0)
+
+    if seed is not None: np.random.seed(seed)
+    noise = hp.synalm(ps_noise, lmax=hp.Alm.getlmax(input_alm_f1.size))
+
+    total = correlated + noise
+    total[~np.isfinite(total)] = 0
+
+    return total
+
+# ------------------------------------------------------------------------------
+# method from here: https://github.com/healpy/healpy/blob/master/healpy/rotator.py
+def rotate_map(self, m):
+        """Rotate a HEALPix map to a new reference frame
+        This function first rotates the pixels centers of the new reference
+        frame to the original reference frame, then uses hp.get_interp_val
+        to interpolate bilinearly the pixel values, finally fixes Q and U
+        polarization by the modification to the psi angle caused by
+        the Rotator using Rotator.angle_ref.
+        Parameters
+        ----------
+        m : np.ndarray
+            Input map, 1 map is considered I, 2 maps:[Q,U], 3 maps:[I,Q,U]
+        Returns
+        -------
+        m_rotated : np.ndarray
+            Map in the new reference frame
+        """
+        if pixelfunc.maptype(m) == 0:  # a single map is converted to a list
+            m = [m]
+        npix = len(m[0])
+        nside = pixelfunc.npix2nside(npix)
+        theta_pix_center, phi_pix_center = pixelfunc.pix2ang(nside=nside,
+                                                             ipix=np.arange(npix)
+                                                             )
+
+        # Rotate the pixels center of the new reference frame to the original frame
+        theta_pix_center_rot, phi_pix_center_rot = self.I(theta_pix_center,
+                                                          phi_pix_center
+                                                          )
+
+        # Interpolate the original map to the pixels centers in the new ref frame
+        m_rotated = [pixelfunc.get_interp_val(each, theta_pix_center_rot,
+                                              phi_pix_center_rot)
+                     for each in m]
+
+        # Rotate polarization
+        if len(m_rotated) > 1:
+            # Create a complex map from QU  and apply the rotation in psi due to the rotation
+            # Slice from the end of the array so that it works both for QU and IQU
+            L_map = (m_rotated[-2] + m_rotated[-1] * 1j) * \
+                    np.exp(1j * 2 * self.angle_ref(theta_pix_center,
+                                                   phi_pix_center)
+                           )
+
+            # Overwrite the Q and U maps with the correct values
+            m_rotated[-2] = np.real(L_map)
+            m_rotated[-1] = np.imag(L_map)
+        else:
+            m_rotated = m_rotated[0]
+
+        return m_rotated
