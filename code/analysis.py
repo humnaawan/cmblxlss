@@ -173,8 +173,8 @@ filename = plot_mollview(map_in=gal_density_map,
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(filename),
                       readme=readme)
-# module the galaxy density map with fake LSS (fluctuations just multiply)
-gal_density_map_mod = gal_density_map * lsst_data_map
+# modulate the galaxy density map with fake LSS
+gal_density_map_mod = (gal_density_map + 1) * (lsst_data_map + 1) - 1
 # plot
 filename = plot_mollview(map_in=gal_density_map_mod,
                          title='modulated correlated galaxy density',
