@@ -5,7 +5,7 @@ source /global/common/software/lsst/cori-haswell-gcc/stack/setup_current_sims.sh
 #--------------------------------------------------------------------------------------
 # set up inputs
 lmax=3000
-repo_path=/global/homes/a/awan/SO/CMBL-LSS-CrossCorr/
+repo_path=/global/homes/a/awan/so/cmblxlss/
 outdir=${repo_path}/outputs
 
 # cmb related inputs
