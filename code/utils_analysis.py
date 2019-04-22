@@ -139,7 +139,7 @@ def get_reconstructed_kappa_alm(lensed_cmb_map, kappa_filter, kappa_norm,
                                  outdir=outdir,
                                  file_tag=file_tag,
                                  save_plot=True, show_plot=False)
-        readme = print_update(update='Saved lensed cmb map with fg in %s\n'%(filename),
+        readme = print_update(update='Saved lensed cmb map with lsst mask in %s\n'%(filename),
                               readme=readme)
     # -----------------------------------------------
     # now convert to alms

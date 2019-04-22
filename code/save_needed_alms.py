@@ -207,14 +207,23 @@ out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
                                   lsst_mask_map=None, fg_map=None)
 kappa_alms_normed, readme = out
 # -----------------------------------------------
-# reconstruction with foregrounds
-readme = print_update(update='\n## Reconstructing kappa with fg ... \n',
+# reconstruction with just the foregrounds
+readme = print_update(update='\n## Reconstructing kappa with fg only ... \n',
                       readme=readme)
 out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
                                   kappa_filter=kappa_filter, kappa_norm=kappa_norm,
                                   lmax=lmax, mlmax=lmax+1000, outdir=outdir,
                                   lsst_mask_map=None, fg_map=fg_map)
 kappa_alms_normed_fg, readme = out
+# -----------------------------------------------
+# reconstruction with just the lsst mask
+readme = print_update(update='\n## Reconstructing kappa with lsst mask only ... \n',
+                      readme=readme)
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                  lsst_mask_map=lsst_mask_smoothed, fg_map=None)
+kappa_alms_normed_masked, readme = out
 # -----------------------------------------------
 # reconstruction with foregrounds + lsst mask
 readme = print_update(update='\n## Reconstructing kappa with fg & lsst mask ... \n',
@@ -229,39 +238,47 @@ kappa_alms_normed_fg_masked, readme = out
 # now save all the alms
 alms_dir = '%s/alms_dir/'%outdir
 if not os.path.exists(alms_dir): os.makedirs(alms_dir)
-readme = print_update(update='\n## Saving alms in %s ... \n'%alms_dir.split(outdir)[-1],
+readme = print_update(update='## Saving alms in %s ... \n'%alms_dir.split(outdir)[-1],
                       readme=readme)
 # baseline kappa alms
 filename = 'kappa_alms_normed.pickle'
 dump_stuff(data_to_save=kappa_alms_normed, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # kappa alms with fg
 filename = 'kappa_alms_normed_fg.pickle'
 dump_stuff(data_to_save=kappa_alms_normed_fg, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
+                      readme=readme)
+# kappa alms with fg
+filename = 'kappa_alms_normed_masked.pickle'
+dump_stuff(data_to_save=kappa_alms_normed_masked, filename=filename, outdir=alms_dir)
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # kappa alms with fg + lsst mask
 filename = 'kappa_alms_normed_fg_masked.pickle'
 dump_stuff(data_to_save=kappa_alms_normed_fg_masked, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # correlated g field
 filename = 'gal_density_alm.pickle'
 dump_stuff(data_to_save=gal_density_alm, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # lsst-modulated correlated g field
 filename = 'gal_density_alm_mod.pickle'
 dump_stuff(data_to_save=gal_density_alm_mod, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # misc
 filename = 'misc_info.pickle'
 dump_stuff(data_to_save={'lsst_fsky':lsst_fsky, 'lmax':lmax}, filename=filename, outdir=alms_dir)
-readme = print_update(update='\nSaved %s \n'%filename,
+readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # update readme
+readme = print_update(update='\nTime taken for the whole thing: %.3f min\n' % ((time.time()-time0)/60.),
+                      readme=readme)
+# write the readme
 readme_file = open('%s/readme_%s.txt' % (outdir, readme_tag), 'a')
 readme_file.write(readme)
 readme_file.close()
