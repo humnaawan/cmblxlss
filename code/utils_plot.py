@@ -51,7 +51,7 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
                   save_plot=True, show_plot=False, loglog=False,
                   cross_convention=True, sci_yticks=True,
                   binned=False, bin_width=20, lmax=1000,
-                  markers=None, colors=None):
+                  markers=None, colors=None, lmin=None):
     #
     if residuals and baseline_key is None and not binned:
         raise ValueError('Need baseline_key + binned == True if want to plot residuals')
@@ -88,7 +88,9 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
         plt.gca().set_yscale('log')
     if loglog:
         plt.gca().set_xscale('log')
-    #plt.xlim(-1, lmax + bin_width)
+    if lmin is not None:
+        xmin, xmax = plt.gca().get_xlim()
+        plt.xlim(lmin, xmax)
     if binned:
         plt.title('Binned: bin_width: %s\n%s'%(bin_width, title))
 
