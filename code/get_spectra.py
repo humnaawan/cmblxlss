@@ -46,6 +46,11 @@ filename = 'kappa_alms_normed_fg.pickle'
 kappa_alms_normed_fg = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
+# kappa alms with lsst mask
+filename = 'kappa_alms_normed_masked.pickle'
+kappa_alms_normed_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
 # kappa alms with fg + lsst mask
 filename = 'kappa_alms_normed_fg_masked.pickle'
 kappa_alms_normed_fg_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
@@ -82,25 +87,27 @@ c_ells = OrderedDict()
 ells = np.arange(0, lmax)
 # -----------------------------------------------
 # calculate correlations
-readme = print_update(update='\n## Calculating correlations ... \n',
+readme = print_update(update='## Calculating correlations ... \n',
                       readme=readme)
 # autos
-c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed, lmax=lmax)[0:lmax]
 c_ells[r'$\kappa\kappa$ w/ fg'] = hp.alm2cl(kappa_alms_normed_fg, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa\kappa$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, lmax=lmax)[0:lmax]/lsst_fsky
 c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_masked, lmax=lmax)[0:lmax]/lsst_fsky
 # cross correlation
-c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
 c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
 c_ells[r'$\kappa$ w/ fg + lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
-
 # -----------------------------------------------
 cls_dir = '%s/cls_dir/'%outdir
 if not os.path.exists(cls_dir): os.makedirs(cls_dir)
 
 # plot the cross-correlations in sets
-readme = print_update(update='\n## Plotting spectra + saving them in %s ... \n' % (cls_dir.split(outdir)[-1]),
+readme = print_update(update='## Plotting spectra + saving them in %s ... \n' % (cls_dir.split(outdir)[-1]),
                       readme=readme)
 # first plot the auto spectra for checks
 c_ells_to_plot = {}
@@ -127,11 +134,15 @@ readme = print_update(update='Saved %s'%filename,
 c_ells_to_plot = {}
 for key in [f for f in c_ells.keys() if f.__contains__(r'correlated $g$')]:
     c_ells_to_plot[key] = c_ells[key]
+
+# set up colors, markers
+markers = ['+', '1', '.', 'x']
+colors = ['b', 'm', 'orangered', 'k']
 # plot
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
-                         sci_yticks=True,
+                         sci_yticks=True, colors=colors, markers=markers,
                          binned=False, bin_width=20, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
@@ -139,8 +150,26 @@ readme = print_update(update='Saved %s'%filename,
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
-                         sci_yticks=True,
+                         sci_yticks=True, colors=colors, markers=markers,
                          binned=True, bin_width=50, lmax=lmax)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# binned: residuals
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True, colors=colors, markers=markers,
+                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
+                         sci_yticks=True, loglog=False,
+                         binned=True, bin_width=50, lmax=lmax)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+# binned: residuals: zoomed
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True, colors=colors, markers=markers,
+                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
+                         sci_yticks=True, loglog=True,
+                         binned=True, bin_width=50, lmax=lmax, lmin=1000)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------
@@ -152,7 +181,7 @@ readme = print_update(update='Saved cross-spectra in %s.\n' % filename,
                       readme=readme)
 readme = print_update(update='\nTime taken for the whole thing: %.3f min\n' % ((time.time()-time0)/60.),
                       readme=readme)
-
+# write the readme
 readme_file = open('%s/readme_%s.txt' % (outdir, readme_tag), 'a')
 readme_file.write(readme)
 readme_file.close()
