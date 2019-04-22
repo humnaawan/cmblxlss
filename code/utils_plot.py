@@ -56,7 +56,8 @@ def plot_cls_dict(cls_in, outdir, file_tag,
         wanted_bin_edges = np.arange(0, lmax, bin_width)
         binner1d = bin1D(wanted_bin_edges)
     # plot
-    markers = ['d', 'x', '.', '+', ',', '*']
+    markers = ['P', 'x', '.', '+', '1', 'X', '3']
+    colors = ['orangered', 'b', 'darkviolet', 'olive', 'darkred', 'k', 'darkred']
     ntot = len(cls_in.keys())
     plt.clf()
     for i, key in enumerate(cls_in):
@@ -65,8 +66,8 @@ def plot_cls_dict(cls_in, outdir, file_tag,
         else:
             ell_toplot, cl_toplot = np.arange(np.size(cls_in[key])), cls_in[key]
 
-        plt.plot(ell_toplot, cl_toplot, label=key)
-        plt.scatter(ell_toplot, cl_toplot, marker=markers[i%ntot])
+        plt.plot(ell_toplot, cl_toplot, label=key, color=colors[i%ntot])
+        plt.scatter(ell_toplot, cl_toplot, marker=markers[i%ntot], color=colors[i%ntot])
     # plot details
     plt.xlabel(r'$\ell$')
     plt.ylabel(r'$C_\ell$')

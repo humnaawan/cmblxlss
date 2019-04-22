@@ -47,7 +47,10 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     ind = np.where((data_in['metricValues'] > completeness_threshold) & \
                 (data_in['mask'] == False))[0]
     mask[ind] = 1.
-    # see if nee to plot intermediate plots
+    # just to be sure: zero out the data in all the masked pixels
+    data_in['metricValues'][mask == 1] = 0.
+
+    # see if need to plot intermediate plots
     if plot_interm:
         # plot skymap of the completeness map
         filename = plot_mollview(map_in=mask,

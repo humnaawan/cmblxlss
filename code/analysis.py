@@ -282,7 +282,7 @@ readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------
 # save the corrs
-filename = 'cross_specs.csv'
+filename = 'all_spectra.csv'
 pd.DataFrame(c_ells).to_csv('%s/%s'%(outdir, filename), index=False)
 # update readme
 readme = print_update(update='Saved cross-spectra in %s.\n' % filename,
