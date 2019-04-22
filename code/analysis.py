@@ -175,6 +175,8 @@ readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(
                       readme=readme)
 # modulate the galaxy density map with fake LSS
 gal_density_map_mod = (gal_density_map + 1) * (lsst_data_map + 1) - 1
+# now multiply by the apodized mask
+gal_density_map_mod *= lsst_mask_smoothed
 # plot
 filename = plot_mollview(map_in=gal_density_map_mod,
                          title='modulated correlated galaxy density',
