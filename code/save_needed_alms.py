@@ -1,16 +1,21 @@
+################################################################################
+# This script calculates that alms for kappa and galaxy density (w different
+# variations, e.g. with lsst mask and without), and saves them; it plots some
+# intermediate skymaps.
+################################################################################
 import matplotlib
 matplotlib.use('Agg')
 import numpy as np
 import healpy as hp
-import pandas as pd
 import os
-from collections import OrderedDict
 import time
 from optparse import OptionParser
 from orphics import cosmology
+import pickle
 # ------------------------------------------------------------------------------
 # imports from this folder
-from utils_plot import plot_cls_dict, plot_mollview
+from utils_plot import plot_mollview
+from utils_files import dump_stuff
 from utils_analysis import *
 #-------------------------------------------------------------------------------
 parser = OptionParser()
@@ -66,11 +71,12 @@ readme_tag = 'lmax%s'%(lmax)
 # set up the outdir
 outdir = '%s/output_%s_lsst-%s'%(main_outdir, readme_tag, lsst_data_tag)
 if not os.path.exists(outdir): os.makedirs(outdir)
+readme_tag += '_get-alms'
 # update readme
 readme = print_update(update='\nOutput directory: %s\n'%outdir.split(main_outdir)[1],
                       readme=readme)
 # set up dictionary that will contain all the spectra we care about
-c_ells = OrderedDict()
+c_ells = {}
 # set up the ells
 ells = np.arange(0, lmax)
 mlmax = lmax + 1000
@@ -220,76 +226,44 @@ out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
                                   fg_map=fg_map)
 kappa_alms_normed_fg_masked, readme = out
 # -----------------------------------------------
-# calculate correlations
-readme = print_update(update='\n## Calculating correlations ... \n',
+# now save all the alms
+alms_dir = '%s/alms_dir/'%outdir
+if not os.path.exists(alms_dir): os.makedirs(alms_dir)
+readme = print_update(update='\n## Saving alms in %s ... \n'%alms_dir.split(outdir)[-1],
                       readme=readme)
-# autos
-c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa\kappa$ w/ fg'] = hp.alm2cl(kappa_alms_normed_fg, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_masked, lmax=lmax)[0:lmax]/lsst_fsky
-# cross correlation
-c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ fg + lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
-
-# -----------------------------------------------
-# plot the cross-correlations in sets
-readme = print_update(update='\n## Plotting spectra ... \n',
+# baseline kappa alms
+filename = 'kappa_alms_normed.pickle'
+dump_stuff(data_to_save=kappa_alms_normed, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
                       readme=readme)
-# first plot the auto spectra for checks
-c_ells_to_plot = {}
-for key in [f for f in c_ells.keys() if f.__contains__(r'\kappa\kappa')]:
-    c_ells_to_plot[key] = c_ells[key]
-# plot
-filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kk-only',
-                         save_plot=True, show_plot=False,
-                         cross_convention=True,
-                         sci_yticks=True,
-                         binned=False, bin_width=20, lmax=lmax)
-readme = print_update(update='Saved %s'%filename,
+# kappa alms with fg
+filename = 'kappa_alms_normed_fg.pickle'
+dump_stuff(data_to_save=kappa_alms_normed_fg, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
                       readme=readme)
-# plot binned
-filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kk-only',
-                         save_plot=True, show_plot=False,
-                         cross_convention=True,
-                         sci_yticks=True,
-                         binned=True, bin_width=50, lmax=lmax)
-readme = print_update(update='Saved %s'%filename,
+# kappa alms with fg + lsst mask
+filename = 'kappa_alms_normed_fg_masked.pickle'
+dump_stuff(data_to_save=kappa_alms_normed_fg_masked, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
                       readme=readme)
-# -----------------------------------------------
-# now plot the cross correlations
-c_ells_to_plot = {}
-c_ells_to_plot[r'$\kappa g$ theory'] = c_ells[r'$\kappa g$ theory']
-for key in [f for f in c_ells.keys() if f.__contains__(r'correlated $g$')]:
-    c_ells_to_plot[key] = c_ells[key]
-# plot
-filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kg-only',
-                         save_plot=True, show_plot=False,
-                         cross_convention=True,
-                         sci_yticks=True,
-                         binned=False, bin_width=20, lmax=lmax)
-readme = print_update(update='Saved %s'%filename,
+# correlated g field
+filename = 'gal_density_alm.pickle'
+dump_stuff(data_to_save=gal_density_alm, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
                       readme=readme)
-# binned
-filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=outdir, file_tag='kg-only',
-                         save_plot=True, show_plot=False,
-                         cross_convention=True,
-                         sci_yticks=True,
-                         binned=True, bin_width=50, lmax=lmax)
-readme = print_update(update='Saved %s'%filename,
+# lsst-modulated correlated g field
+filename = 'gal_density_alm_mod.pickle'
+dump_stuff(data_to_save=gal_density_alm_mod, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
                       readme=readme)
-# -----------------------------------------------
-# save the corrs
-filename = 'all_spectra.csv'
-pd.DataFrame(c_ells).to_csv('%s/%s'%(outdir, filename), index=False)
+# misc
+filename = 'misc_info.pickle'
+dump_stuff(data_to_save={'lsst_fsky':lsst_fsky, 'lmax':lmax}, filename=filename, outdir=alms_dir)
+readme = print_update(update='\nSaved %s \n'%filename,
+                      readme=readme)
 # update readme
-readme = print_update(update='Saved cross-spectra in %s.\n' % filename,
-                      readme=readme)
-readme = print_update(update='\nTime taken for the whole thing: %.3f min\n' % ((time.time()-time0)/60.),
-                      readme=readme)
-
 readme_file = open('%s/readme_%s.txt' % (outdir, readme_tag), 'a')
 readme_file.write(readme)
 readme_file.close()
+
+print('All done.')
