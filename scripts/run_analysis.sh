@@ -1,8 +1,17 @@
 #!/bin/bash
 ################################################################################
+# This script runs two python scripts: the first calculates and saves alms for
+# kappa and g with different variations, while the second reads in the saved
+# alms and calculates spectra.
+#
+# The script allows re-using saved alms for different spectra without having to
+# run time-consuming calculations repeatedly.
+################################################################################
 # source the stack
 source /global/common/software/lsst/cori-haswell-gcc/stack/setup_current_sims.sh
-#--------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+save_alms=1  # set to 0 to just use the saved alms and calculate spectra.
+# ------------------------------------------------------------------------------
 # set up inputs
 lmax=3000
 repo_path=/global/homes/a/awan/so/cmblxlss/
@@ -22,8 +31,11 @@ lsst_path=${lsst_path}'fakelss_baseline2018a_Y10_nside256_i<25.3_allz_wDust_noPo
 lsst_path=${lsst_path}'dNbyN_data/dNbyN_data_i_RandomDitherPerNight.npz'
 lsst_data_tag=baseline2018a-allz-eg
 
-# run the code
-python ${repo_path}/code/analysis.py \
+# ------------------------------------------------------------------------------
+if [ $save_alms == 1 ];
+then
+# run the code to save alms
+python ${repo_path}/code/save_needed_alms.py \
                     --outdir=${outdir} \
                     --lensed-cmb-path=${lensed_cmb_map_path} \
                     --cosmology-path=${cosmo_path} \
@@ -34,3 +46,9 @@ python ${repo_path}/code/analysis.py \
                     --lsst-path=${lsst_path} \
                     --lsstdata-tag=${lsst_data_tag} \
                     --lmax=${lmax}
+fi
+# ------------------------------------------------------------------------------
+echo Calculating spectra
+outdir=${outdir}/output_lmax${lmax}_lsst-${lsst_data_tag}/
+# run the code to calculate spectra
+python ${repo_path}/code/get_spectra.py --outdir=${outdir}
