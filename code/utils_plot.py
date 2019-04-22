@@ -47,17 +47,25 @@ def plot_power_spectrum(map_in, lmax, outdir, file_tag, title,
         return filename
 
 #--------------------------------------------------------------------------------------
-def plot_cls_dict(cls_in, outdir, file_tag,
-                  save_plot=True, show_plot=False,
+def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
+                  save_plot=True, show_plot=False, loglog=False,
                   cross_convention=True, sci_yticks=True,
-                  binned=False, bin_width=20, lmax=1000):
+                  binned=False, bin_width=20, lmax=1000,
+                  markers=None, colors=None):
+    #
+    if residuals and baseline_key is None and not binned:
+        raise ValueError('Need baseline_key + binned == True if want to plot residuals')
     # see if need to set up the binner
     if binned:
         wanted_bin_edges = np.arange(0, lmax, bin_width)
         binner1d = bin1D(wanted_bin_edges)
+    if residuals:
+        _ , cl_baseline = binner1d.binned(np.arange(len(cls_in[baseline_key])), cls_in[baseline_key])
     # plot
-    markers = ['P', 'x', '.', '+', '1', 'X', '3']
-    colors = ['orangered', 'b', 'darkviolet', 'olive', 'darkred', 'k', 'darkred']
+    if markers is None:
+        markers = ['P', 'x', '.', 'X', '+', '1', '3']
+    if colors is None:
+        colors = ['orangered', 'b', 'darkviolet', 'k', 'olive', 'darkred', 'c']
     ntot = len(cls_in.keys())
     plt.clf()
     for i, key in enumerate(cls_in):
@@ -65,23 +73,39 @@ def plot_cls_dict(cls_in, outdir, file_tag,
             ell_toplot, cl_toplot = binner1d.binned(np.arange(len(cls_in[key])), cls_in[key])
         else:
             ell_toplot, cl_toplot = np.arange(np.size(cls_in[key])), cls_in[key]
-
+        if residuals:
+            cl_toplot = (cl_toplot - cl_baseline)/cl_baseline
         plt.plot(ell_toplot, cl_toplot, label=key, color=colors[i%ntot])
         plt.scatter(ell_toplot, cl_toplot, marker=markers[i%ntot], color=colors[i%ntot])
     # plot details
     plt.xlabel(r'$\ell$')
-    plt.ylabel(r'$C_\ell$')
-    plt.gca().set_yscale('log')
-    plt.xlim(-1, lmax + bin_width)
-    if binned: plt.title('Binned: bin_width: %s'%bin_width)
+    title = ''
+    if residuals:
+        plt.ylabel(r'($C_\ell$-$C_{\ell, 0}$)/$C_{\ell, 0}$')
+        title = '$C_{\ell, 0}$ = %s'%baseline_key
+    else:
+        plt.ylabel(r'$C_\ell$')
+        plt.gca().set_yscale('log')
+    if loglog:
+        plt.gca().set_xscale('log')
+    #plt.xlim(-1, lmax + bin_width)
+    if binned:
+        plt.title('Binned: bin_width: %s\n%s'%(bin_width, title))
+
     plt.legend(bbox_to_anchor=(1, 1))
     if save_plot:
         if not (file_tag == '' or file_tag is None):
             file_tag = '_%s'%file_tag
-        if binned:
-            filename = 'power_spectra_binned_%sbinwidth%s.png'%(bin_width, file_tag)
+        if loglog:
+            tag = '_loglog'
         else:
-            filename = 'power_spectra%s.png'%file_tag
+            tag = ''
+        if residuals:
+            tag += '_residuals'
+        if binned:
+            filename = 'power_spectra_binned_%sbinwidth%s%s.png'%(bin_width, file_tag, tag)
+        else:
+            filename = 'power_spectra%s%s.png'%(file_tag, tag)
         plt.savefig('%s/%s'%(outdir, filename), format='png', bbox_inches='tight')
     if show_plot: plt.show()
     else: plt.close('all')
