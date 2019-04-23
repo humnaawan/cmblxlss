@@ -201,7 +201,7 @@ kappa_filter[ells < 300] = 0
 # baseline reconstruction
 readme = print_update(update='\n## Reconstructing kappa (no fg or mask) ... \n',
                       readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
                                   kappa_filter=kappa_filter, kappa_norm=kappa_norm,
                                   lmax=lmax, mlmax=lmax+1000, outdir=outdir,
                                   lsst_mask_map=None, fg_map=None)
@@ -210,7 +210,7 @@ kappa_alms_normed, readme = out
 # reconstruction with just the foregrounds
 readme = print_update(update='\n## Reconstructing kappa with fg only ... \n',
                       readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
                                   kappa_filter=kappa_filter, kappa_norm=kappa_norm,
                                   lmax=lmax, mlmax=lmax+1000, outdir=outdir,
                                   lsst_mask_map=None, fg_map=fg_map)
@@ -219,7 +219,7 @@ kappa_alms_normed_fg, readme = out
 # reconstruction with just the lsst mask
 readme = print_update(update='\n## Reconstructing kappa with lsst mask only ... \n',
                       readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
                                   kappa_filter=kappa_filter, kappa_norm=kappa_norm,
                                   lmax=lmax, mlmax=lmax+1000, outdir=outdir,
                                   lsst_mask_map=lsst_mask_smoothed, fg_map=None)
@@ -228,7 +228,7 @@ kappa_alms_normed_masked, readme = out
 # reconstruction with foregrounds + lsst mask
 readme = print_update(update='\n## Reconstructing kappa with fg & lsst mask ... \n',
                       readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map,
+out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
                                   kappa_filter=kappa_filter, kappa_norm=kappa_norm,
                                   lmax=lmax, mlmax=mlmax, outdir=outdir,
                                   lsst_mask_map=lsst_mask_smoothed,
