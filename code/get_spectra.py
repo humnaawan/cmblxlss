@@ -13,7 +13,7 @@ import healpy as hp
 import pandas as pd
 import os
 from collections import OrderedDict
-import time
+import time, datetime
 from optparse import OptionParser
 # ------------------------------------------------------------------------------
 # imports from this folder
@@ -31,7 +31,9 @@ parser.add_option('--outdir', dest='outdir',
 outdir = options.outdir
 # ------------------------------------------------------------------------------
 time0 = time.time()
-readme = ''
+readme = '\n------------------------------------------------------------\n'
+readme += '%s\n'%datetime.datetime.now()
+readme += '## Running get_spectra.'
 # ------------------------------------------------------------------------------
 # read in the alms
 alms_dir = '%s/alms_dir/'%outdir
@@ -109,6 +111,7 @@ if not os.path.exists(cls_dir): os.makedirs(cls_dir)
 # plot the cross-correlations in sets
 readme = print_update(update='## Plotting spectra + saving them in %s ... \n' % (cls_dir.split(outdir)[-1]),
                       readme=readme)
+bin_width = 50
 # first plot the auto spectra for checks
 c_ells_to_plot = {}
 for key in [f for f in c_ells.keys() if f.__contains__(r'\kappa\kappa')]:
@@ -118,7 +121,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kk-onl
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True,
-                         binned=False, bin_width=20, lmax=lmax)
+                         binned=False, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # plot binned
@@ -126,7 +129,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kk-onl
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True,
-                         binned=True, bin_width=50, lmax=lmax)
+                         binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------
@@ -143,7 +146,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-onl
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True, colors=colors, markers=markers,
-                         binned=False, bin_width=20, lmax=lmax)
+                         binned=False, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # binned
@@ -151,7 +154,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-onl
                          save_plot=True, show_plot=False,
                          cross_convention=True,
                          sci_yticks=True, colors=colors, markers=markers,
-                         binned=True, bin_width=50, lmax=lmax)
+                         binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # binned: residuals
@@ -160,7 +163,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-onl
                          cross_convention=True, colors=colors, markers=markers,
                          residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
                          sci_yticks=True, loglog=False,
-                         binned=True, bin_width=50, lmax=lmax)
+                         binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # binned: residuals: zoomed
@@ -169,7 +172,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-onl
                          cross_convention=True, colors=colors, markers=markers,
                          residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
                          sci_yticks=True, loglog=True,
-                         binned=True, bin_width=50, lmax=lmax, lmin=1000)
+                         binned=True, bin_width=20, lmax=lmax, lmin=10)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------

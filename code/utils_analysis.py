@@ -19,7 +19,7 @@ __all__= ['print_update', 'get_lsst_maps', 'get_reconstructed_kappa_alm',
 # ------------------------------------------------------------------------------
 def print_update(update, readme):
     print(update)
-    return readme + update
+    return '%s\n%s'%(readme, update)
 # ------------------------------------------------------------------------------
 def get_lsst_maps(data_file, data_tag, data_label, nside_out,
                   completeness_threshold, smoothing_fwhm, outdir,
@@ -183,7 +183,7 @@ def generate_correlated_alm(input_alm_f1, Clf1f1, Clf2f2, Clf1f2, seed=None):
 
 # ------------------------------------------------------------------------------
 # method from here: https://github.com/healpy/healpy/blob/master/healpy/rotator.py
-def rotate_map(self, m):
+def rotate_map(hp_rotator, m):
         """Rotate a HEALPix map to a new reference frame
         This function first rotates the pixels centers of the new reference
         frame to the original reference frame, then uses hp.get_interp_val
@@ -208,9 +208,9 @@ def rotate_map(self, m):
                                                              )
 
         # Rotate the pixels center of the new reference frame to the original frame
-        theta_pix_center_rot, phi_pix_center_rot = self.I(theta_pix_center,
-                                                          phi_pix_center
-                                                          )
+        theta_pix_center_rot, phi_pix_center_rot = hp_rotator.I(theta_pix_center,
+                                                                phi_pix_center
+                                                                )
 
         # Interpolate the original map to the pixels centers in the new ref frame
         m_rotated = [pixelfunc.get_interp_val(each, theta_pix_center_rot,
@@ -222,8 +222,8 @@ def rotate_map(self, m):
             # Create a complex map from QU  and apply the rotation in psi due to the rotation
             # Slice from the end of the array so that it works both for QU and IQU
             L_map = (m_rotated[-2] + m_rotated[-1] * 1j) * \
-                    np.exp(1j * 2 * self.angle_ref(theta_pix_center,
-                                                   phi_pix_center)
+                    np.exp(1j * 2 * hp_rotator.angle_ref(theta_pix_center,
+                                                         phi_pix_center)
                            )
 
             # Overwrite the Q and U maps with the correct values

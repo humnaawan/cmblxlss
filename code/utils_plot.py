@@ -104,6 +104,8 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
             tag = ''
         if residuals:
             tag += '_residuals'
+        if lmin is not None:
+            tag += '_lmin%s'%lmin
         if binned:
             filename = 'power_spectra_binned_%sbinwidth%s%s.png'%(bin_width, file_tag, tag)
         else:
@@ -133,8 +135,8 @@ def plot_mollview(map_in, title, data_label, outdir, file_tag,
     cmap.set_under('w')
     # set up the colorbar
     in_survey = np.where(map_in.mask == False)[0]
-    median = np.median(map_in.data[in_survey])
-    stddev = np.std(map_in.data[in_survey])
+    median = np.nanmedian(map_in.data[in_survey])
+    stddev = np.nanstd(map_in.data[in_survey])
     # figure out the ticks for the colorbar
     nticks = 5
     color_min = median - 1.5 * stddev
