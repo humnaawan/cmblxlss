@@ -57,7 +57,10 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
         raise ValueError('Need baseline_key + binned == True if want to plot residuals')
     # see if need to set up the binner
     if binned:
-        wanted_bin_edges = np.arange(0, lmax, bin_width)
+        if loglog:
+            wanted_bin_edges = np.geomspace(10, lmax, bin_width)
+        else:
+            wanted_bin_edges = np.arange(0, lmax, bin_width)
         binner1d = bin1D(wanted_bin_edges)
     if residuals:
         _ , cl_baseline = binner1d.binned(np.arange(len(cls_in[baseline_key])), cls_in[baseline_key])
