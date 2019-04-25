@@ -55,7 +55,7 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
         # plot skymap of the completeness map
         filename = plot_mollview(map_in=mask,
                                  title='completeness map: threshold %s'%completeness_threshold,
-                                 data_label='',
+                                 data_label='mask',
                                  outdir=outdir,
                                  file_tag='lsstmask_%s'%(data_tag),
                                  save_plot=True, show_plot=False)
@@ -78,9 +78,9 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     # mask
     filename = plot_mollview(map_in=mask_smoothed,
                              title='apodized completeness mask',
-                             data_label=data_label,
+                             data_label='',
                              outdir=outdir,
-                             file_tag='%s_apodized_lsstmask'%(data_tag),
+                             file_tag='apodized_lsstmask',
                              save_plot=True, show_plot=False)
     readme = print_update(update='Saved the binary apodized mask in %s\n'%(filename),
                           readme=readme)

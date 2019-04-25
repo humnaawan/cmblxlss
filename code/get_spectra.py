@@ -145,8 +145,8 @@ for key in [f for f in c_ells.keys() if f.__contains__(' x ')]:
     c_ells_to_plot[key] = c_ells[key]
 
 # set up colors, markers
-markers = ['+', '1', '.', 'x']
-colors = ['b', 'm', 'orangered', 'k']
+markers = ['+', '.', 'x']
+colors = ['b', 'orangered', 'k']
 # plot
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,

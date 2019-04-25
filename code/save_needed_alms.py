@@ -176,7 +176,7 @@ gal_density_alm = generate_correlated_alm(input_alm_f1=kappa_theory_filt,
 gal_density_map = hp.alm2map(gal_density_alm, nside=nside_target)
 # plot
 filename = plot_mollview(map_in=gal_density_map,
-                         title='correlated galaxy density',
+                         title='galaxy density',
                          data_label='',
                          outdir=outdir,
                          file_tag='galdensity',
@@ -187,7 +187,7 @@ readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(
 gal_density_map_mod = (gal_density_map + 1) * (lsst_data_map + 1) - 1
 # plot
 filename = plot_mollview(map_in=gal_density_map_mod,
-                         title='modulated correlated galaxy density',
+                         title='modulated galaxy density',
                          data_label='',
                          outdir=outdir,
                          file_tag='galdensity-modulated',

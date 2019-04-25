@@ -142,8 +142,11 @@ def plot_mollview(map_in, title, data_label, outdir, file_tag,
     stddev = np.nanstd(map_in.data[in_survey])
     # figure out the ticks for the colorbar
     nticks = 5
-    color_min = median - 1.5 * stddev
-    color_max = median + 1.5 * stddev
+    if stddev == 0:
+        color_min, color_max = 0, 1
+    else:
+        color_min = median - 1.5 * stddev
+        color_max = median + 1.5 * stddev
     increment = (color_max-color_min)/float(nticks)
     ticks = np.arange(color_min+increment, color_max, increment)
     # plot
