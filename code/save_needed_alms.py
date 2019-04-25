@@ -185,8 +185,6 @@ readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(
                       readme=readme)
 # modulate the galaxy density map with fake LSS
 gal_density_map_mod = (gal_density_map + 1) * (lsst_data_map + 1) - 1
-# now multiply by the apodized mask
-gal_density_map_mod *= lsst_mask_smoothed
 # plot
 filename = plot_mollview(map_in=gal_density_map_mod,
                          title='modulated correlated galaxy density',
@@ -197,6 +195,19 @@ filename = plot_mollview(map_in=gal_density_map_mod,
 readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_mod = hp.map2alm(gal_density_map_mod, lmax=mlmax)
+
+# now multiply by the apodized mask
+gal_density_map_mod_masked = gal_density_map_mod * lsst_mask_smoothed
+# plot
+filename = plot_mollview(map_in=gal_density_map_mod_masked,
+                         title='modulated galaxy density w/ lsst mask',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='galdensity-modulated_xmask',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
+                      readme=readme)
+gal_density_alm_mod_masked = hp.map2alm(gal_density_map_mod_masked, lmax=mlmax)
 # -----------------------------------------------
 # set up the filter for the cmb reconstruction
 kappa_filter = 1/cl_tt_theory
@@ -276,6 +287,11 @@ readme = print_update(update='Saved %s \n'%filename,
 # lsst-modulated correlated g field
 filename = 'gal_density_alm_mod.pickle'
 dump_stuff(data_to_save=gal_density_alm_mod, filename=filename, outdir=alms_dir)
+readme = print_update(update='Saved %s \n'%filename,
+                      readme=readme)
+# lsst-modulated + masked correlated g field
+filename = 'gal_density_alm_mod_xmask.pickle'
+dump_stuff(data_to_save=gal_density_alm_mod_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # misc
