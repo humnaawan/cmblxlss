@@ -68,6 +68,11 @@ filename = 'gal_density_alm_mod.pickle'
 gal_density_alm_mod = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
+# lsst-modulated x mask correlated g field
+filename = 'gal_density_alm_mod_xmask.pickle'
+gal_density_alm_mod_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
 # misc
 filename = 'misc_info.pickle'
 misc_info = read_pickle(filename='%s/%s'%(alms_dir, filename))
@@ -99,11 +104,12 @@ c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_mas
 # cross correlation
 #c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ fg + lsst mask x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked, lmax=lmax)[0:lmax]
 # -----------------------------------------------
 cls_dir = '%s/cls_dir/'%outdir
 if not os.path.exists(cls_dir): os.makedirs(cls_dir)
@@ -135,7 +141,7 @@ readme = print_update(update='Saved %s'%filename,
 # -----------------------------------------------
 # now plot the cross correlations
 c_ells_to_plot = {}
-for key in [f for f in c_ells.keys() if f.__contains__(r'correlated $g$')]:
+for key in [f for f in c_ells.keys() if f.__contains__(' x ')]:
     c_ells_to_plot[key] = c_ells[key]
 
 # set up colors, markers
@@ -161,7 +167,7 @@ readme = print_update(update='Saved %s'%filename,
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True, colors=colors, markers=markers,
-                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
+                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
                          sci_yticks=True, loglog=False,
                          binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
@@ -170,7 +176,7 @@ readme = print_update(update='Saved %s'%filename,
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True, colors=colors, markers=markers,
-                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x correlated $g$',
+                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
                          sci_yticks=True, loglog=True,
                          binned=True, bin_width=20, lmax=lmax, lmin=10)
 readme = print_update(update='Saved %s'%filename,
