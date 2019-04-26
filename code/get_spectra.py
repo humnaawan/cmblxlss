@@ -29,6 +29,10 @@ parser.add_option('--outdir', dest='outdir',
 # parse the options
 (options, args) = parser.parse_args()
 outdir = options.outdir
+
+if outdir.__contains__('-nodust'):
+    outdir = outdir.split('-nodust')[0]
+
 # ------------------------------------------------------------------------------
 time0 = time.time()
 readme = '\n------------------------------------------------------------\n'
@@ -63,19 +67,29 @@ filename = 'gal_density_alm.pickle'
 gal_density_alm = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
-# lsst-modulated g field
-filename = 'gal_density_alm_mod.pickle'
-gal_density_alm_mod = read_pickle(filename='%s/%s'%(alms_dir, filename))
-readme = print_update(update='\nReading in %s'%filename,
-                      readme=readme)
 # masked g field
 filename = 'gal_density_alm_xmask.pickle'
 gal_density_alm_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
+# lsst-modulated g field
+filename = 'gal_density_alm_mod.pickle'
+gal_density_alm_mod_wdust = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
 # lsst-modulated x mask g field
 filename = 'gal_density_alm_mod_xmask.pickle'
-gal_density_alm_mod_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
+gal_density_alm_mod_masked_wdust = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
+# lsst-modulated g field no dust
+filename = 'gal_density_alm_mod-nodust.pickle'
+gal_density_alm_mod_nodust = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
+# lsst-modulated x mask g field w/ dust
+filename = 'gal_density_alm_mod-nodust_xmask.pickle'
+gal_density_alm_mod_masked_nodust = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
 # misc
@@ -111,10 +125,12 @@ c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_mas
 #c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
 c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_masked, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_nodust, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_wdust, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_nodust, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_wdust, lmax=lmax)[0:lmax]
 # -----------------------------------------------
 cls_dir = '%s/cls_dir/'%outdir
 if not os.path.exists(cls_dir): os.makedirs(cls_dir)
