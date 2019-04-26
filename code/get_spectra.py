@@ -166,13 +166,14 @@ for key in [f for f in c_ells.keys() if f.__contains__(' x ')]:
     c_ells_to_plot[key] = c_ells[key]
 
 # set up colors, markers
-markers = ['+', '.', 'x']
-colors = ['b', 'orangered', 'k']
+markers = ['+', 'x', '.', '3', 'x']
+colors = ['b', 'orangered', 'm', 'darkcyan', 'k']
+linestyles = ['-', '-', '--', '--', '-']
 # plot
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
-                         sci_yticks=True, colors=colors, markers=markers,
+                         sci_yticks=True, colors=colors, markers=markers, linestyles=linestyles,
                          binned=False, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
@@ -180,26 +181,58 @@ readme = print_update(update='Saved %s'%filename,
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
                          cross_convention=True,
-                         sci_yticks=True, colors=colors, markers=markers,
+                         sci_yticks=True, colors=colors, markers=markers, linestyles=linestyles,
                          binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # binned: residuals
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
-                         cross_convention=True, colors=colors, markers=markers,
+                         cross_convention=True, colors=colors, markers=markers, linestyles=linestyles,
                          residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
                          sci_yticks=True, loglog=False,
                          binned=True, bin_width=bin_width, lmax=lmax)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
-# binned: residuals: zoomed
+# binned: residuals: zoomed: all
 filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
                          save_plot=True, show_plot=False,
-                         cross_convention=True, colors=colors, markers=markers,
+                         cross_convention=True, colors=colors, markers=markers, linestyles=linestyles,
                          residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
                          sci_yticks=True, loglog=True,
-                         binned=True, bin_width=bin_width, lmax=lmax, lmin=10)
+                         binned=True, bin_width=30, lmax=lmax, lmin=10)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+
+# plot a subset
+# set up colors, markers
+markers = ['+', '+', 'x']
+colors = ['b', 'orangered',  'k']
+linestyles = ['-', '-', '-']
+
+c_ells_to_plot = {}
+keys = [r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
+        r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation',
+        r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation w/ dust']
+for key in keys:
+    c_ells_to_plot[key] = c_ells[key]
+
+# binned
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True,
+                         sci_yticks=True, colors=colors, markers=markers, linestyles=linestyles,
+                         binned=True, bin_width=bin_width, lmax=lmax)
+readme = print_update(update='Saved %s'%filename,
+                      readme=readme)
+
+# binned: residuals: zoomed: some
+filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-only',
+                         save_plot=True, show_plot=False,
+                         cross_convention=True, colors=colors, markers=markers, linestyles=linestyles,
+                         residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
+                         sci_yticks=True, loglog=True,
+                         binned=True, bin_width=30, lmax=lmax, lmin=10)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------
