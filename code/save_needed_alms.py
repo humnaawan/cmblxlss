@@ -208,6 +208,19 @@ filename = plot_mollview(map_in=gal_density_map_mod_masked,
 readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_mod_masked = hp.map2alm(gal_density_map_mod_masked, lmax=mlmax)
+
+# also create the masked unmodulated map
+gal_density_map_masked = gal_density_map * lsst_mask_smoothed
+# plot
+filename = plot_mollview(map_in=gal_density_map_masked,
+                         title='modulated galaxy density w/ lsst mask',
+                         data_label='',
+                         outdir=outdir,
+                         file_tag='galdensity-modulated_xmask',
+                         save_plot=True, show_plot=False)
+readme = print_update(update='Saved the masked galaxy density map in %s\n'%(filename),
+                      readme=readme)
+gal_density_alm_masked = hp.map2alm(gal_density_map_masked, lmax=mlmax)
 # -----------------------------------------------
 # set up the filter for the cmb reconstruction
 kappa_filter = 1/cl_tt_theory
@@ -282,6 +295,11 @@ readme = print_update(update='Saved %s \n'%filename,
 # correlated g field
 filename = 'gal_density_alm.pickle'
 dump_stuff(data_to_save=gal_density_alm, filename=filename, outdir=alms_dir)
+readme = print_update(update='Saved %s \n'%filename,
+                      readme=readme)
+# correlated g field with mask
+filename = 'gal_density_alm_xmask.pickle'
+dump_stuff(data_to_save=gal_density_alm_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # lsst-modulated correlated g field
