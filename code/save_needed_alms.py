@@ -47,6 +47,9 @@ parser.add_option('--completeness-thresh', dest='completeness_threshold',
 parser.add_option('--smoothing-fwhm', dest='smoothing_fwhm',
                   help='FWHM (in radians) of the gaussian beam used to smooth the halo density map',
                   default=np.radians(1.))
+parser.add_option('--no-lens-rec',
+                  action='store_true', dest='no_lens_rec', default=False,
+                  help='Use to not do the cmb lensing reconstructions.')
 #--------------------------------------------------------------------------------------
 # parse the options
 (options, args) = parser.parse_args()
@@ -62,6 +65,7 @@ lsst_data_tag = options.lsst_data_tag
 lmax = options.lmax
 completeness_threshold = options.completeness_threshold
 smoothing_fwhm = options.smoothing_fwhm
+no_lens_rec = options.no_lens_rec
 
 # ------------------------------------------------------------------------------
 time0 = time.time()
@@ -69,10 +73,16 @@ time0 = time.time()
 readme = '\n------------------------------------------------------------\n'
 readme += '%s\n'%datetime.datetime.now()
 readme += '## Running get_needed_alms.'
+if no_lens_rec: readme += ' without cmb lensing reconstruction.'
+
+dust_tag = ''
+if lsst_data_tag.__contains__('nodust'):
+    dust_tag = '-nodust'
+    lsst_dir_tag = lsst_data_tag.split(dust_tag)[0]
 
 readme_tag = 'lmax%s'%(lmax)
 # set up the outdir
-outdir = '%s/output_%s_lsst-%s'%(main_outdir, readme_tag, lsst_data_tag)
+outdir = '%s/output_%s_lsst-%s'%(main_outdir, readme_tag, lsst_dir_tag)
 if not os.path.exists(outdir): os.makedirs(outdir)
 readme_tag += '_get-alms'
 # update readme
@@ -83,8 +93,11 @@ c_ells = {}
 # set up the ells
 ells = np.arange(0, lmax)
 mlmax = lmax + 1000
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# galaxy density related stuff
 # -----------------------------------------------
-# read in the lense cmb map
+# read in the lensed cmb map: needed to get the right nside for things
 readme = print_update(update='\n## Reading in lensed cmb map ... \n',
                       readme=readme)
 lensed_cmb_map = hp.read_map(lensed_cmb_map_path)
@@ -98,34 +111,6 @@ filename = plot_mollview(map_in=lensed_cmb_map,
                          file_tag='lensed_cmb_map',
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved lensed cmb map in %s\n'%(filename),
-                      readme=readme)
-# -----------------------------------------------
-# read in the fg map
-readme = print_update(update='\n## Reading in foregrounds map ... \n',
-                      readme=readme)
-fg_map = hp.read_map(fg_map_path)
-# save the fg map
-filename = plot_mollview(map_in=fg_map,
-                         title='fg_map',
-                         data_label='',
-                         outdir=outdir,
-                         file_tag='fg_map',
-                         save_plot=True, show_plot=False)
-readme = print_update(update='Saved fg map in %s\n'%(filename),
-                    readme=readme)
-# rotate the map
-readme = print_update(update='Rotating the map from galactic to equatorial coords ... ',
-                      readme=readme)
-r = hp.rotator.Rotator(coord=['G','C']) # rotator object: G=galactic --> C=equatorial
-fg_map = rotate_map(r, fg_map)  # rotate the map
-# save the fg map
-filename = plot_mollview(map_in=fg_map,
-                         title='fg_map_rotated',
-                         data_label='',
-                         outdir=outdir,
-                         file_tag='fg_map_rotated',
-                         save_plot=True, show_plot=False)
-readme = print_update(update='Saved rotated fg map in %s\n'%(filename),
                       readme=readme)
 # -----------------------------------------------
 # get some theory stuff from orphics
@@ -150,14 +135,9 @@ kappa_theory_map = hp.alm2map(kappa_theory_phi_alms, nside=nside_target)
 kappa_theory_phi_alms_red = hp.map2alm(kappa_theory_map, lmax=mlmax)
 kappa_theory_filt = hp.almxfl(alm=kappa_theory_phi_alms_red, fl=ells*(ells+1)/2)
 # -----------------------------------------------
-# read in the normalization for reconstructed alms
-readme = print_update(update='\b## Reading in kappa normalization ... \b',
-                      readme=readme)
-kappa_norm = np.genfromtxt(kappa_norm_path)[:, 1]
-# -----------------------------------------------
 # get the lsst dn/n map and the completeness mask (binary; apodized)
 out = get_lsst_maps(data_file=lsst_path, data_tag=lsst_data_tag,
-                    data_label='dNbyN', nside_out=nside_target,
+                    data_label='dNbyN%s'%dust_tag, nside_out=nside_target,
                     completeness_threshold=completeness_threshold,
                     smoothing_fwhm=smoothing_fwhm, outdir=outdir,
                     plot_interm=True)
@@ -179,7 +159,7 @@ filename = plot_mollview(map_in=gal_density_map,
                          title='galaxy density',
                          data_label='',
                          outdir=outdir,
-                         file_tag='galdensity',
+                         file_tag='galdensity%s'%dust_tag,
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved the galaxy density map in %s\n'%(filename),
                       readme=readme)
@@ -190,7 +170,7 @@ filename = plot_mollview(map_in=gal_density_map_mod,
                          title='modulated galaxy density',
                          data_label='',
                          outdir=outdir,
-                         file_tag='galdensity-modulated',
+                         file_tag='galdensity-modulated%s'%dust_tag,
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved the modulated galaxy density map in %s\n'%(filename),
                       readme=readme)
@@ -203,7 +183,7 @@ filename = plot_mollview(map_in=gal_density_map_mod_masked,
                          title='modulated galaxy density w/ lsst mask',
                          data_label='',
                          outdir=outdir,
-                         file_tag='galdensity-modulated_xmask',
+                         file_tag='galdensity-modulated%s_xmask'%dust_tag,
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved the modulated galaxy density map w/ mask in %s\n'%(filename),
                       readme=readme)
@@ -216,82 +196,122 @@ filename = plot_mollview(map_in=gal_density_map_masked,
                          title='modulated galaxy density w/ lsst mask',
                          data_label='',
                          outdir=outdir,
-                         file_tag='galdensity_xmask',
+                         file_tag='galdensity%s_xmask'%dust_tag,
                          save_plot=True, show_plot=False)
 readme = print_update(update='Saved the galaxy density map w/ mask in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_masked = hp.map2alm(gal_density_map_masked, lmax=mlmax)
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# cmb reconstruction related stuff
 # -----------------------------------------------
-# set up the filter for the cmb reconstruction
-kappa_filter = 1/cl_tt_theory
-kappa_filter[ells < 300] = 0
-# -----------------------------------------------
-# baseline reconstruction
-readme = print_update(update='\n## Reconstructing kappa (no fg or mask) ... \n',
-                      readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
-                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
-                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
-                                  lsst_mask_map=None, fg_map=None)
-kappa_alms_normed = out[0]
-readme += out[1]
-# -----------------------------------------------
-# reconstruction with just the foregrounds
-readme = print_update(update='\n## Reconstructing kappa with fg only ... \n',
-                      readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
-                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
-                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
-                                  lsst_mask_map=None, fg_map=fg_map)
-kappa_alms_normed_fg = out[0]
-readme += out[1]
-# -----------------------------------------------
-# reconstruction with just the lsst mask
-readme = print_update(update='\n## Reconstructing kappa with lsst mask only ... \n',
-                      readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
-                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
-                                  lmax=lmax, mlmax=lmax+1000, outdir=outdir,
-                                  lsst_mask_map=lsst_mask_smoothed, fg_map=None)
-kappa_alms_normed_masked = out[0]
-readme += out[1]
-# -----------------------------------------------
-# reconstruction with foregrounds + lsst mask
-readme = print_update(update='\n## Reconstructing kappa with fg & lsst mask ... \n',
-                      readme=readme)
-out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
-                                  kappa_filter=kappa_filter, kappa_norm=kappa_norm,
-                                  lmax=lmax, mlmax=mlmax, outdir=outdir,
-                                  lsst_mask_map=lsst_mask_smoothed,
-                                  fg_map=fg_map)
-kappa_alms_normed_fg_masked = out[0]
-readme += out[1]
+if not no_lens_rec:
+        # -----------------------------------------------
+        # read in the fg map
+        readme = print_update(update='\n## Reading in foregrounds map ... \n',
+                              readme=readme)
+        fg_map = hp.read_map(fg_map_path)
+        # save the fg map
+        filename = plot_mollview(map_in=fg_map,
+                                 title='fg_map',
+                                 data_label='',
+                                 outdir=outdir,
+                                 file_tag='fg_map',
+                                 save_plot=True, show_plot=False)
+        readme = print_update(update='Saved fg map in %s\n'%(filename),
+                            readme=readme)
+        # rotate the map
+        readme = print_update(update='Rotating the map from galactic to equatorial coords ... ',
+                              readme=readme)
+        r = hp.rotator.Rotator(coord=['G','C']) # rotator object: G=galactic --> C=equatorial
+        fg_map = rotate_map(r, fg_map)  # rotate the map
+        # save the fg map
+        filename = plot_mollview(map_in=fg_map,
+                                 title='fg_map_rotated',
+                                 data_label='',
+                                 outdir=outdir,
+                                 file_tag='fg_map_rotated',
+                                 save_plot=True, show_plot=False)
+        readme = print_update(update='Saved rotated fg map in %s\n'%(filename),
+                              readme=readme)
+        # -----------------------------------------------
+        # read in the normalization for reconstructed alms
+        readme = print_update(update='\b## Reading in kappa normalization ... \b',
+                              readme=readme)
+        kappa_norm = np.genfromtxt(kappa_norm_path)[:, 1]
+        # -----------------------------------------------
+        # set up the filter for the cmb reconstruction
+        kappa_filter = 1/cl_tt_theory
+        kappa_filter[ells < 300] = 0
+        # -----------------------------------------------
+        # baseline reconstruction
+        readme = print_update(update='\n## Reconstructing kappa (no fg or mask) ... \n',
+                              readme=readme)
+        out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
+                                          kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                          lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                          lsst_mask_map=None, fg_map=None)
+        kappa_alms_normed = out[0]
+        readme += out[1]
+        # -----------------------------------------------
+        # reconstruction with just the foregrounds
+        readme = print_update(update='\n## Reconstructing kappa with fg only ... \n',
+                              readme=readme)
+        out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
+                                          kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                          lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                          lsst_mask_map=None, fg_map=fg_map)
+        kappa_alms_normed_fg = out[0]
+        readme += out[1]
+        # -----------------------------------------------
+        # reconstruction with just the lsst mask
+        readme = print_update(update='\n## Reconstructing kappa with lsst mask only ... \n',
+                              readme=readme)
+        out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
+                                          kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                          lmax=lmax, mlmax=lmax+1000, outdir=outdir,
+                                          lsst_mask_map=lsst_mask_smoothed, fg_map=None)
+        kappa_alms_normed_masked = out[0]
+        readme += out[1]
+        # -----------------------------------------------
+        # reconstruction with foregrounds + lsst mask
+        readme = print_update(update='\n## Reconstructing kappa with fg & lsst mask ... \n',
+                              readme=readme)
+        out = get_reconstructed_kappa_alm(lensed_cmb_map=lensed_cmb_map.copy(),
+                                          kappa_filter=kappa_filter, kappa_norm=kappa_norm,
+                                          lmax=lmax, mlmax=mlmax, outdir=outdir,
+                                          lsst_mask_map=lsst_mask_smoothed,
+                                          fg_map=fg_map)
+        kappa_alms_normed_fg_masked = out[0]
+        readme += out[1]
+# ------------------------------------------------------------------------------
 # -----------------------------------------------
 # now save all the alms
 alms_dir = '%s/alms_dir/'%outdir
 if not os.path.exists(alms_dir): os.makedirs(alms_dir)
 readme = print_update(update='## Saving alms in %s ... \n'%alms_dir.split(outdir)[-1],
                       readme=readme)
-# baseline kappa alms
-filename = 'kappa_alms_normed.pickle'
-dump_stuff(data_to_save=kappa_alms_normed, filename=filename, outdir=alms_dir)
-readme = print_update(update='Saved %s \n'%filename,
-                      readme=readme)
-# kappa alms with fg
-filename = 'kappa_alms_normed_fg.pickle'
-dump_stuff(data_to_save=kappa_alms_normed_fg, filename=filename, outdir=alms_dir)
-readme = print_update(update='Saved %s \n'%filename,
-                      readme=readme)
-# kappa alms with fg
-filename = 'kappa_alms_normed_masked.pickle'
-dump_stuff(data_to_save=kappa_alms_normed_masked, filename=filename, outdir=alms_dir)
-readme = print_update(update='Saved %s \n'%filename,
-                      readme=readme)
-# kappa alms with fg + lsst mask
-filename = 'kappa_alms_normed_fg_masked.pickle'
-dump_stuff(data_to_save=kappa_alms_normed_fg_masked, filename=filename, outdir=alms_dir)
-readme = print_update(update='Saved %s \n'%filename,
-                      readme=readme)
+if not no_lens_rec:
+        # baseline kappa alms
+        filename = 'kappa_alms_normed.pickle'
+        dump_stuff(data_to_save=kappa_alms_normed, filename=filename, outdir=alms_dir)
+        readme = print_update(update='Saved %s \n'%filename,
+                              readme=readme)
+        # kappa alms with fg
+        filename = 'kappa_alms_normed_fg.pickle'
+        dump_stuff(data_to_save=kappa_alms_normed_fg, filename=filename, outdir=alms_dir)
+        readme = print_update(update='Saved %s \n'%filename,
+                              readme=readme)
+        # kappa alms with fg
+        filename = 'kappa_alms_normed_masked.pickle'
+        dump_stuff(data_to_save=kappa_alms_normed_masked, filename=filename, outdir=alms_dir)
+        readme = print_update(update='Saved %s \n'%filename,
+                              readme=readme)
+        # kappa alms with fg + lsst mask
+        filename = 'kappa_alms_normed_fg_masked.pickle'
+        dump_stuff(data_to_save=kappa_alms_normed_fg_masked, filename=filename, outdir=alms_dir)
+        readme = print_update(update='Saved %s \n'%filename,
+                              readme=readme)
 # g field
 filename = 'gal_density_alm.pickle'
 dump_stuff(data_to_save=gal_density_alm, filename=filename, outdir=alms_dir)
@@ -303,12 +323,12 @@ dump_stuff(data_to_save=gal_density_alm_masked, filename=filename, outdir=alms_d
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # lsst-modulated g field
-filename = 'gal_density_alm_mod.pickle'
+filename = 'gal_density_alm_mod%s.pickle'%dust_tag
 dump_stuff(data_to_save=gal_density_alm_mod, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
 # lsst-modulated + masked g field
-filename = 'gal_density_alm_mod_xmask.pickle'
+filename = 'gal_density_alm_mod%s_xmask.pickle'%dust_tag
 dump_stuff(data_to_save=gal_density_alm_mod_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
