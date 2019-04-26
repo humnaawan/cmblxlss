@@ -51,10 +51,11 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
                   save_plot=True, show_plot=False, loglog=False,
                   cross_convention=True, sci_yticks=True,
                   binned=False, bin_width=20, lmax=1000,
-                  markers=None, colors=None, lmin=None):
+                  markers=None, colors=None, linestyles=None, lmin=None):
     #
     if residuals and baseline_key is None and not binned:
         raise ValueError('Need baseline_key + binned == True if want to plot residuals')
+    nkeys = len(list(cls_in.keys()))
     # see if need to set up the binner
     if binned:
         if loglog:
@@ -69,6 +70,8 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
         markers = ['P', 'x', '.', 'X', '+', '1', '3']
     if colors is None:
         colors = ['orangered', 'b', 'darkviolet', 'k', 'olive', 'darkred', 'c']
+    if linestyles is None:
+        linestyles = ['-']*nkeys
     ntot = len(cls_in.keys())
     plt.clf()
     for i, key in enumerate(cls_in):
@@ -78,7 +81,7 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
             ell_toplot, cl_toplot = np.arange(np.size(cls_in[key])), cls_in[key]
         if residuals:
             cl_toplot = (cl_toplot - cl_baseline)/cl_baseline
-        plt.plot(ell_toplot, cl_toplot, label=key, color=colors[i%ntot])
+        plt.plot(ell_toplot, cl_toplot, linestyles[i], label=key, color=colors[i%ntot])
         plt.scatter(ell_toplot, cl_toplot, marker=markers[i%ntot], color=colors[i%ntot])
     # plot details
     plt.xlabel(r'$\ell$')
