@@ -46,6 +46,22 @@ python ${repo_path}/code/save_needed_alms.py \
                     --lsst-path=${lsst_path} \
                     --lsstdata-tag=${lsst_data_tag} \
                     --lmax=${lmax}
+# update to handle w/o dust
+lsst_path=${lsst_path}'fakelss_baseline2018a_Y10_nside256_i<25.3_allz_noDust_noPoisson_no0pt_egfootprint_normedNgal_directory/'
+lsst_path=${lsst_path}'dNbyN_data/dNbyN_data_i_RandomDitherPerNight.npz'
+lsst_data_tag=baseline2018a-allz-eg-nodust
+
+python ${repo_path}/code/save_needed_alms.py \
+                    --outdir=${outdir} \
+                    --lensed-cmb-path=${lensed_cmb_map_path} \
+                    --cosmology-path=${cosmo_path} \
+                    --kappa-norm-path=${kappa_norm_path} \
+                    --kappa-alm-theory_path=${kappa_alm_theory_path} \
+                    --gcals-path=${gcls_path} \
+                    --fg-map-path=${fg_map_path} \
+                    --lsst-path=${lsst_path} \
+                    --lsstdata-tag=${lsst_data_tag} \
+                    --lmax=${lmax} --no-lens-rec
 fi
 # ------------------------------------------------------------------------------
 echo Calculating spectra
