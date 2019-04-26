@@ -68,6 +68,11 @@ filename = 'gal_density_alm_mod.pickle'
 gal_density_alm_mod = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
+# masked correlated g field
+filename = 'gal_density_alm_xmask.pickle'
+gal_density_alm_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
+readme = print_update(update='\nReading in %s'%filename,
+                      readme=readme)
 # lsst-modulated x mask correlated g field
 filename = 'gal_density_alm_mod_xmask.pickle'
 gal_density_alm_mod_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
@@ -105,7 +110,7 @@ c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_mas
 #c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod, lmax=lmax)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_masked, lmax=lmax)[0:lmax]
 c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
 #c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
