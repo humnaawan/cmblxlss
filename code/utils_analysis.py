@@ -32,7 +32,7 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     # see if need to plot intermediate plots
     if plot_interm:
         # plot skymap of the input data
-        filename = plot_mollview(map_in=data_in['metricValues'],
+        filename = plot_mollview(map_in=data_in['metricValues'].copy(),
                                  title='%s : read in'%(data_tag),
                                  data_label=data_label,
                                  outdir=outdir,
@@ -44,9 +44,9 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     # -----------------------------------------------
     # Construct a completeness map based on the input map
     mask = np.zeros(len(data_in['metricValues']))
-    ind = np.where((data_in['metricValues'] > completeness_threshold) & \
-                (data_in['mask'] == False))[0]
-    mask[ind] = 1.
+    insurvey = np.where((data_in['mask'] == False))[0]
+    ind = np.where(data_in['metricValues'][insurvey] > completeness_threshold)[0]
+    mask[insurvey[ind]] = 1.
     # just to be sure: zero out the data in all the masked pixels
     data_in['metricValues'][mask == 1] = 0.
 
@@ -76,7 +76,7 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     # -----------------------------------------------
     # now plot the to-output maps
     # mask
-    filename = plot_mollview(map_in=mask_smoothed,
+    filename = plot_mollview(map_in=mask_smoothed.copy(),
                              title='apodized completeness mask',
                              data_label='',
                              outdir=outdir,
@@ -85,7 +85,7 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
     readme = print_update(update='Saved the binary apodized mask in %s\n'%(filename),
                           readme=readme)
     # data map
-    filename = plot_mollview(map_in=data_map,
+    filename = plot_mollview(map_in=data_map.copy(),
                              title=data_tag,
                              data_label='',
                              outdir=outdir,
@@ -95,7 +95,7 @@ def get_lsst_maps(data_file, data_tag, data_label, nside_out,
                           readme=readme)
     # -----------------------------------------------
     # now calculate the fsky
-    fsky = float(len(data_in['mask'][data_in['mask'] == False]))/len(data_in['metricValues'])
+    fsky = float(len(insurvey))/len(data_in['metricValues'])
     readme = print_update(update='fsky: %s\n'%(fsky),
                           readme=readme)
     # update readme

@@ -104,6 +104,7 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
     if save_plot:
         if not (file_tag == '' or file_tag is None):
             file_tag = '_%s'%file_tag
+        file_tag += '_%scurves'%nkeys
         if loglog:
             tag = '_loglog'
         else:
