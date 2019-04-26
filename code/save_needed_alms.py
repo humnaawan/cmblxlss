@@ -164,7 +164,7 @@ out = get_lsst_maps(data_file=lsst_path, data_tag=lsst_data_tag,
 lsst_mask_smoothed, lsst_data_map, lsst_fsky, readme_ = out
 readme += readme_
 # -----------------------------------------------
-# construct correlated galaxy density alms
+# construct galaxy density alms
 readme = print_update(update='\n## Generating correlated density field ... \n',
                       readme=readme)
 gal_density_alm = generate_correlated_alm(input_alm_f1=kappa_theory_filt,
@@ -181,7 +181,7 @@ filename = plot_mollview(map_in=gal_density_map,
                          outdir=outdir,
                          file_tag='galdensity',
                          save_plot=True, show_plot=False)
-readme = print_update(update='Saved the correlated galaxy density map in %s\n'%(filename),
+readme = print_update(update='Saved the galaxy density map in %s\n'%(filename),
                       readme=readme)
 # modulate the galaxy density map with fake LSS
 gal_density_map_mod = (gal_density_map + 1) * (lsst_data_map + 1) - 1
@@ -192,7 +192,7 @@ filename = plot_mollview(map_in=gal_density_map_mod,
                          outdir=outdir,
                          file_tag='galdensity-modulated',
                          save_plot=True, show_plot=False)
-readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
+readme = print_update(update='Saved the modulated galaxy density map in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_mod = hp.map2alm(gal_density_map_mod, lmax=mlmax)
 
@@ -205,7 +205,7 @@ filename = plot_mollview(map_in=gal_density_map_mod_masked,
                          outdir=outdir,
                          file_tag='galdensity-modulated_xmask',
                          save_plot=True, show_plot=False)
-readme = print_update(update='Saved the moduldated correlated galaxy density map in %s\n'%(filename),
+readme = print_update(update='Saved the modulated galaxy density map w/ mask in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_mod_masked = hp.map2alm(gal_density_map_mod_masked, lmax=mlmax)
 
@@ -216,9 +216,9 @@ filename = plot_mollview(map_in=gal_density_map_masked,
                          title='modulated galaxy density w/ lsst mask',
                          data_label='',
                          outdir=outdir,
-                         file_tag='galdensity-modulated_xmask',
+                         file_tag='galdensity_xmask',
                          save_plot=True, show_plot=False)
-readme = print_update(update='Saved the masked galaxy density map in %s\n'%(filename),
+readme = print_update(update='Saved the galaxy density map w/ mask in %s\n'%(filename),
                       readme=readme)
 gal_density_alm_masked = hp.map2alm(gal_density_map_masked, lmax=mlmax)
 # -----------------------------------------------
@@ -292,22 +292,22 @@ filename = 'kappa_alms_normed_fg_masked.pickle'
 dump_stuff(data_to_save=kappa_alms_normed_fg_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
-# correlated g field
+# g field
 filename = 'gal_density_alm.pickle'
 dump_stuff(data_to_save=gal_density_alm, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
-# correlated g field with mask
+# g field with mask
 filename = 'gal_density_alm_xmask.pickle'
 dump_stuff(data_to_save=gal_density_alm_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
-# lsst-modulated correlated g field
+# lsst-modulated g field
 filename = 'gal_density_alm_mod.pickle'
 dump_stuff(data_to_save=gal_density_alm_mod, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,
                       readme=readme)
-# lsst-modulated + masked correlated g field
+# lsst-modulated + masked g field
 filename = 'gal_density_alm_mod_xmask.pickle'
 dump_stuff(data_to_save=gal_density_alm_mod_masked, filename=filename, outdir=alms_dir)
 readme = print_update(update='Saved %s \n'%filename,

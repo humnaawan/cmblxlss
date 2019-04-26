@@ -58,22 +58,22 @@ filename = 'kappa_alms_normed_fg_masked.pickle'
 kappa_alms_normed_fg_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
-# correlated g field
+# g field
 filename = 'gal_density_alm.pickle'
 gal_density_alm = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
-# lsst-modulated correlated g field
+# lsst-modulated g field
 filename = 'gal_density_alm_mod.pickle'
 gal_density_alm_mod = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
-# masked correlated g field
+# masked g field
 filename = 'gal_density_alm_xmask.pickle'
 gal_density_alm_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
                       readme=readme)
-# lsst-modulated x mask correlated g field
+# lsst-modulated x mask g field
 filename = 'gal_density_alm_mod_xmask.pickle'
 gal_density_alm_mod_masked = read_pickle(filename='%s/%s'%(alms_dir, filename))
 readme = print_update(update='\nReading in %s'%filename,
@@ -183,7 +183,7 @@ filename = plot_cls_dict(cls_in=c_ells_to_plot, outdir=cls_dir, file_tag='kg-onl
                          cross_convention=True, colors=colors, markers=markers,
                          residuals=True, baseline_key=r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask',
                          sci_yticks=True, loglog=True,
-                         binned=True, bin_width=20, lmax=lmax, lmin=10)
+                         binned=True, bin_width=bin_width, lmax=lmax, lmin=10)
 readme = print_update(update='Saved %s'%filename,
                       readme=readme)
 # -----------------------------------------------
