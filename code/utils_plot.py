@@ -48,23 +48,27 @@ def plot_power_spectrum(map_in, lmax, outdir, file_tag, title,
 
 #--------------------------------------------------------------------------------------
 def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
-                  save_plot=True, show_plot=False, loglog=False,
-                  cross_convention=True, sci_yticks=True,
-                  binned=False, bin_width=20, lmax=1000,
-                  markers=None, colors=None, linestyles=None, lmin=None):
+                  save_plot=True, show_plot=False, ylog=True, xlog=False,
+                  binned=False, bin_width=20, lmin=None, lmax=None,
+                  markers=None, colors=None, linestyles=None, ylims=None):
     #
     if residuals and baseline_key is None and not binned:
         raise ValueError('Need baseline_key + binned == True if want to plot residuals')
     nkeys = len(list(cls_in.keys()))
     # see if need to set up the binner
     if binned:
-        if loglog:
+        if lmax is None:
+            raise ValueError('Need lmax specified for binning.')
+        if xlog:
             wanted_bin_edges = np.geomspace(10, lmax, bin_width)
         else:
             wanted_bin_edges = np.arange(0, lmax, bin_width)
         binner1d = bin1D(wanted_bin_edges)
     if residuals:
-        _ , cl_baseline = binner1d.binned(np.arange(len(cls_in[baseline_key])), cls_in[baseline_key])
+        if binned:
+            _ , cl_baseline = binner1d.binned(np.arange(len(cls_in[baseline_key])), cls_in[baseline_key])
+        else:
+            cl_baseline = cls_in[baseline_key]
     # plot
     if markers is None:
         markers = ['P', 'x', '.', 'X', '+', '1', '3']
@@ -92,27 +96,39 @@ def plot_cls_dict(cls_in, outdir, file_tag, residuals=False, baseline_key=None,
     else:
         plt.ylabel(r'$C_\ell$')
         plt.gca().set_yscale('log')
-    if loglog:
+    if ylog:
+        plt.gca().set_yscale('log')
+    if xlog:
         plt.gca().set_xscale('log')
     if lmin is not None:
         xmin, xmax = plt.gca().get_xlim()
         plt.xlim(lmin, xmax)
     if binned:
         plt.title('Binned: bin_width: %s\n%s'%(bin_width, title))
+    if ylims is not None:
+        plt.ylim(ylims[0], ylims[1])
 
     plt.legend(bbox_to_anchor=(1, 1))
     if save_plot:
         if not (file_tag == '' or file_tag is None):
             file_tag = '_%s'%file_tag
         file_tag += '_%scurves'%nkeys
-        if loglog:
+        if xlog and ylog:
             tag = '_loglog'
+        elif xlog and not ylog:
+            tag = '_xlog'
+        elif not xlog and ylog:
+            tag = '_ylog'
         else:
             tag = ''
         if residuals:
             tag += '_residuals'
         if lmin is not None:
             tag += '_lmin%s'%lmin
+        if lmax is not None:
+            tag += '_lmax%s'%lmax
+        if ylims is not None:
+            tag += '_wylims'
         if binned:
             filename = 'power_spectra_binned_%sbinwidth%s%s.png'%(bin_width, file_tag, tag)
         else:
