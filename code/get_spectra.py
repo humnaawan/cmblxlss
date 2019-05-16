@@ -116,21 +116,21 @@ ells = np.arange(0, lmax)
 readme = print_update(update='## Calculating correlations ... \n',
                       readme=readme)
 # autos
-#c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa\kappa$ w/ fg'] = hp.alm2cl(kappa_alms_normed_fg, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa\kappa$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_masked, lmax=lmax)[0:lmax]/lsst_fsky
+#c_ells[r'$\kappa\kappa$ baseline'] = hp.alm2cl(kappa_alms_normed)[0:lmax]
+c_ells[r'$\kappa\kappa$ w/ fg'] = hp.alm2cl(kappa_alms_normed_fg)[0:lmax]
+c_ells[r'$\kappa\kappa$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa\kappa$ w/ fg + lsst mask'] = hp.alm2cl(kappa_alms_normed_fg_masked)[0:lmax]/lsst_fsky
 # cross correlation
-#c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm, lmax=lmax)[0:lmax]
-#c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod, lmax=lmax)[0:lmax]
-#c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_masked, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_nodust, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_wdust, lmax=lmax)[0:lmax]
-c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_nodust, lmax=lmax)[0:lmax]
-#c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm, lmax=lmax)[0:lmax]
-#c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm, lmax=lmax)[0:lmax]/lsst_fsky
-c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_wdust, lmax=lmax)[0:lmax]
+#c_ells[r'$\kappa$ baseline x correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm)[0:lmax]
+#c_ells[r'$\kappa$ baseline x lsst modulated correlated $g$'] = hp.alm2cl(kappa_alms_normed, gal_density_alm_mod)[0:lmax]
+#c_ells[r'$\kappa$ w/ lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_masked)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_nodust)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_masked, gal_density_alm_mod_masked_wdust)[0:lmax]
+c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_nodust)[0:lmax]
+#c_ells[r'$\kappa$ w/ fg x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg, gal_density_alm)[0:lmax]
+#c_ells[r'$\kappa$ w/ fg + lsst mask x correlated $g$'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm)[0:lmax]/lsst_fsky
+c_ells[r'$\kappa$ w/ lsst mask + fg x $g$ w/ lsst mask + modulation w/ dust'] = hp.alm2cl(kappa_alms_normed_fg_masked, gal_density_alm_mod_masked_wdust)[0:lmax]
 # -----------------------------------------------
 cls_dir = '%s/cls_dir/'%outdir
 if not os.path.exists(cls_dir): os.makedirs(cls_dir)
