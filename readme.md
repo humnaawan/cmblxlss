@@ -6,9 +6,12 @@ We calculate the cross-correlations between CMB lensing reconstructions and a (c
 [Need to be written out, once finalized]
 
 ## Repo structure
-- The main code is in two scripts: `code/save_needed_alms.py` calculates the various alms and saves them, while `code/get_spectra.py` reads in the saved alms to calculate and plot the spectra. These scripts which use the rest of the files in that folder.
-- `scripts/run_analysis.sh` runs the python scripts with specific inputs.
-- The `legacy` folder contains code/docs from initial analyses/exploration.
+- The `code` folder contains the working code. The `notebooks` folder contains some helper notebooks.
+- The `legacy` folder contains code/docs from initial analyses/exploration. Specifically, in `legacy-recent`:
+	- 	The main code is in two scripts: `code/save_needed_alms.py` calculates the various alms and saves them, while `code/get_spectra.py` reads in the saved alms to calculate and plot the spectra. These scripts which use the rest of the files in that folder.
+	- 	`scripts/run_analysis.sh` runs the python scripts with specific inputs.
+	- The code needed [orphics](https://github.com/msyriac/orphics ), [pixell](https://github.com/simonsobs/pixell ), and [falafel](https://github.com/ACTCollaboration/falafel); all these have changed though.
+
 
 ## Dependencies
-The code developed here needs [orphics](https://github.com/msyriac/orphics ), [pixell](https://github.com/simonsobs/pixell ), and [falafel](https://github.com/ACTCollaboration/falafel ).
+The code needs basic packages: `healpy`, `numpy`, `matplotlib`.
