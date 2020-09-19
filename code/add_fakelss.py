@@ -37,7 +37,6 @@ def add_fakelss(theory_density_map, fakelss_map_path,
     fakelss_map.mask = fakelss_data['mask']
     fakelss_map.fill_value = fakelss_data['fill_value']
 
-    print('fakelss_map ', fakelss_map)
     # get the nsides for the two maps
     nside_theory = hp.npix2nside(npix=len(theory_density_map))
     nside_fakelss = hp.npix2nside(npix=len(fakelss_map.data))
