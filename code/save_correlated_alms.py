@@ -10,7 +10,7 @@ from utils_plot import plot_power_spectrum, plot_skymap
 from add_fakelss import add_fakelss
 from settings import *
 
-outdir = '/global/homes/a/awan/so/cmblxlss/outputs-now/'
+outdir = '/global/cscratch1/sd/awan/soxlsst/output/'
 
 one_sim_only = False
 grecon = True
