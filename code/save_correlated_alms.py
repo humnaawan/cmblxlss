@@ -53,15 +53,15 @@ cosmo = ccl.Cosmology(Omega_c=cparams['Omega_c'],
                          )
 
 z_arr, dndz = get_dndz(outdir=outdir, zedges=zedges, zmin_overall=zmin,
-                           zmax_overall=zmax, ilim=ilim_ext)
+                       zmax_overall=zmax, ilim=ilim_ext)
 bias = bias_func(z_arr)
 
 print('## getting gg spectra ...')
 # get the gg cells
 gal_counts = ([ccl.NumberCountsTracer(cosmo, has_rsd=False,
-                                          dndz=(z_arr, dndz[zi]),
-                                          bias=(z_arr, bias)
-                                          )
+                                      dndz=(z_arr, dndz[zi]),
+                                      bias=(z_arr, bias)
+                                     )
                    for zi in range(0, nzbins)])
 n_tracer = len(gal_counts)
 
@@ -179,6 +179,10 @@ for i, fname_alms in enumerate( fnames_alms ):
             
         # update the mask
         gal_density_wfakelss_map.mask = joint_mask.copy()
+        plot_skymap(map_in=gal_density_wfakelss_map,
+                    title='correlated g + fakelss; joint mask',
+                    data_label='density', show_plot=False, save_plot=save_plot,
+                    outdir=outdir_plots, file_tag='')
         
         gal_density_wfakelss_alms = hp.map2alm(gal_density_wfakelss_map, lmax=lmax)
         
@@ -197,7 +201,6 @@ for i, fname_alms in enumerate( fnames_alms ):
     hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname), alms=kappa_alms,
                           overwrite=True)
     print('## saved alms in %s' % fname)
-    
     print('## time taken: %.2f min' % ((time.time() - start_time0)/60.))
 
 print('## time taken: %.2f min' % ((time.time() - start_time)/60.))

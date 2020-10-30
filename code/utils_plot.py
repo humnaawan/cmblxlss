@@ -3,6 +3,7 @@ import healpy as hp
 import numpy as np
 from matplotlib import cm
 import numpy.ma as ma
+import copy
 
 # ------------------------------------------------------------------------------
 # plot style imports
@@ -59,7 +60,7 @@ def plot_power_spectrum(map_in, lmax, title,
     plt.gca().set_yscale('log')
     plt.title(title)
     if save_plot:
-        filename = 'power-spec%s.png' % file_tag
+        filename = 'plot_power-spec%s.png' % file_tag
         plt.savefig('%s/%s' % (outdir, filename),
                     format='png', bbox_inches='tight')
         print('## saved %s' % filename)
@@ -108,8 +109,9 @@ def plot_skymap(map_in, title, data_label,
     # get the nside for this map
     nside = hp.npix2nside(len(map_in.data))
     # set up the cmap and the background (dont way anything 'behind' the skymap)
-    cmap = cm.viridis
-    cmap.set_under('w')
+    #cmap = cm.viridis
+    #cmap.set_under('w')
+    cmap = copy.copy(mpl.cm.get_cmap("viridis"))
     # set up the colorbar
     in_survey = np.where(map_in.mask == False)[0]
     median = np.nanmedian(map_in.data[in_survey])
@@ -127,7 +129,7 @@ def plot_skymap(map_in, title, data_label,
     hp.mollview(map_in.filled(map_in.fill_value), flip='astro', rot=(0,0,0), cmap=cmap,
                 min=color_min, max=color_max, title='', cbar=False)
     hp.graticule(dpar=20, dmer=20, verbose=False)
-    plt.title('%s \nnside %s; min %.2f; max %.2f' % (title, nside,
+    plt.title('%s \nnside %s; min %.2e; max %.2e' % (title, nside,
                                                      min(map_in.data),
                                                      max(map_in.data)
                                                      ))
@@ -141,7 +143,7 @@ def plot_skymap(map_in, title, data_label,
     if save_plot:
         if not (data_label == '' or data_label is None):
             data_label = '_%s' % data_label
-        filename = 'skymap%s%s_nside%s.png' % (data_label, file_tag, nside)
+        filename = 'plot_skymap%s%s_nside%s.png' % (data_label, file_tag, nside)
         plt.savefig('%s/%s' % (outdir, filename), format='png',
                     bbox_inches='tight', transparent=True)
         print('## saved %s' % filename)
