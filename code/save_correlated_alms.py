@@ -12,7 +12,9 @@ from settings import *
 
 outdir = '/global/homes/a/awan/so/cmblxlss/outputs-now/'
 
-one_sim_only = True
+one_sim_only = False
+grecon = True
+cmb_data_type = 'TT' # must be one of the following: 'TT', 'mv', 'mvpol'
 cmb_data_path = '/global/cscratch1/sd/msyriac/data/depot/solsst/'
 lensing_mask_path = '%s/v1_mask.fits' % cmb_data_path
 
@@ -95,14 +97,27 @@ ax.set_yscale('log')
 ax.set_xlabel('$\ell$')
 ax.set_ylabel('$C_\ell$')
 ax.legend(bbox_to_anchor=(1,1))
-fname = 'plot_spectra_%sbins.png' % nzbins
+fname = 'plot_spectra-ccl_%sbins.png' % nzbins
 plt.savefig('%s/%s' % (outdir, fname), format='png', bbox_inches='tight')
 plt.close()
 print('## saved spectra plots in %s' % fname)
 
 print('## reading in the CMB alms ...')
-fnames_alms = [ f for f in os.listdir(cmb_data_path) if \
-               f.__contains__('grecon') and f.__contains__('TT') ][0:10]
+
+cmb_data_tag = ''
+if grecon:
+    fnames_alms = [ f for f in os.listdir(cmb_data_path) if \
+                   f.__contains__('grecon') ]
+    cmb_data_tag = 'grecon'
+else:
+    fnames_alms = [ f for f in os.listdir(cmb_data_path) if \
+                  not f.__contains__('grecon') ]
+    cmb_data_tag = 'recon'
+# now select the specific kind of data
+fnames_alms = [ f for f in fnames_alms if \
+               f.__contains__(cmb_data_type) ][0:100]
+cmb_data_tag += '-%s' % cmb_data_type
+
 if one_sim_only:
     fnames_alms = fnames_alms[0:1]
 
@@ -110,6 +125,13 @@ lsst_mask = None
 lensing_mask = None
 joint_mask = None
 
+outdir_plots = '%s/interm-plots_%s' % (outdir, cmb_data_tag)
+os.makedirs(outdir_plots, exist_ok=True)
+
+outdir_data = '%s/interm-data_%s' % (outdir, cmb_data_tag)
+os.makedirs(outdir_data, exist_ok=True)
+
+print('## %s sims to consider.' % len(fnames_alms))
 for i, fname_alms in enumerate( fnames_alms ):
     start_time0 = time.time()
     fname_tag = fname_alms.split('_')[-1].split('.fits')[0]
@@ -129,18 +151,19 @@ for i, fname_alms in enumerate( fnames_alms ):
         # construct the map from the alms
         gal_density_map = hp.alm2map(gal_density_alm, nside=nside)
 
+        if i == 0: save_plot = True
+        else: save_plot = False
+
         plot_skymap(map_in=gal_density_map, title='theory, correlated g',
-                    data_label='density', show_plot=False, save_plot=True,
-                    outdir=outdir, file_tag='' )
+                    data_label='density', show_plot=False, save_plot=save_plot,
+                    outdir=outdir_plots, file_tag='')
 
         print('## adding fakelss ...')
         # add fake lss
-        if i == 0: save_plot = True
-        else: save_plot = False
         gal_density_wfakelss_map = add_fakelss(theory_density_map=gal_density_map,
                                                fakelss_map_path=fakelss_map_path,
                                                show_plot=False, save_plot=save_plot,
-                                               outdir=outdir)
+                                               outdir=outdir_plots)
 
         if joint_mask is None:
             # set up lsst mask
@@ -159,19 +182,20 @@ for i, fname_alms in enumerate( fnames_alms ):
         
         gal_density_wfakelss_alms = hp.map2alm(gal_density_wfakelss_map, lmax=lmax)
         
-        fname = 'alms_correlated-g-wfakelss_%s.npz' % fname_tag
-        np.savez('%s/%s' % (outdir, fname), gal_density_alms=gal_density_wfakelss_alms)
+        fname = 'alms_correlated-g-wfakelss-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
+        hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname),
+                              alms=gal_density_wfakelss_alms, overwrite=True)
         print('## saved alms in %s' % fname)
         
     # mask the kappa map too    
     kappa_map = hp.alm2map(kappa_alms, nside=nside) * joint_mask
     plot_skymap(map_in=kappa_map, title='theory, kappa', data_label='kappa',
-                show_plot=False, save_plot=True,
-                outdir=outdir, file_tag=''
-               )
+                show_plot=False, save_plot=save_plot,
+                outdir=outdir_plots, file_tag='')
     kappa_alms = hp.map2alm(kappa_map, lmax=lmax)
-    fname = 'alms_kappa-masked_%s.npz' % fname_tag
-    np.savez('%s/%s' % (outdir, fname), kappa_alms=kappa_alms)
+    fname = 'alms_kappa-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
+    hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname), alms=kappa_alms,
+                          overwrite=True)
     print('## saved alms in %s' % fname)
     
     print('## time taken: %.2f min' % ((time.time() - start_time0)/60.))
