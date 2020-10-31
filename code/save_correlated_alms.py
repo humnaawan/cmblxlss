@@ -130,7 +130,7 @@ else:
     cmb_data_tag = 'recon'
 # now select the specific kind of data
 fnames_alms = [ f for f in fnames_alms if \
-               f.__contains__(cmb_data_type) ][0:100]
+               f.__contains__('_%s_' % cmb_data_type) ][0:100]
 cmb_data_tag += '-%s' % cmb_data_type
 
 if one_sim_only:
