@@ -2,6 +2,7 @@ import numpy as np
 import os
 import healpy as hp
 import time
+import pickle
 
 from settings import *
 # ------------------------------------------------------------------------------
@@ -113,6 +114,11 @@ plt.savefig('%s/%s' % (outdir, fname), format='png', bbox_inches='tight')
 plt.close()
 print('## saved spectra plots in %s' % fname)
 
-fname = 'data_cells-mean-stddev_%s-sims_%s.npz' % (len(kappa_files), cmb_data_tag)
-np.savez('%s/%s' % (outdir, fname), cells=c_ells, c_ells_err=c_ells_err)
+fname = 'data_cells-mean-stddev_%s-sims_%s.pickle' % (len(kappa_files), cmb_data_tag)
+
+with open('%s/%s'%(outdir, fname), 'wb') as handle:
+    pickle.dump(obj={'cells': c_ells, 'cells_err': c_ells_err},
+                file=handle,
+                protocol=pickle.HIGHEST_PROTOCOL)
+
 print('## saved data in %s' % fname)
