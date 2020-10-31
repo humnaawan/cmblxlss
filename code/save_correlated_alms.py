@@ -17,6 +17,7 @@ grecon = True
 cmb_data_type = 'TT' # must be one of the following: 'TT', 'mv', 'mvpol'
 cmb_data_path = '/global/cscratch1/sd/msyriac/data/depot/solsst/'
 lensing_mask_path = '%s/v1_mask.fits' % cmb_data_path
+overwrite_alms = False
 
 fakelss_map_path = '/global/homes/a/awan/so/cmblxlss/data/fakelss_baseline-v1.4_nside1024.npz'
 
@@ -131,76 +132,86 @@ os.makedirs(outdir_plots, exist_ok=True)
 outdir_data = '%s/interm-data_%s' % (outdir, cmb_data_tag)
 os.makedirs(outdir_data, exist_ok=True)
 
+print('## outdir for data: %s' % outdir_data)
 print('## %s sims to consider.' % len(fnames_alms))
 for i, fname_alms in enumerate( fnames_alms ):
     start_time0 = time.time()
     fname_tag = fname_alms.split('_')[-1].split('.fits')[0]
-    print('\n## running things for sim %s: %sth' % (fname_tag, i+1))
-    # okay now read in the CMB alms
-    kappa_alms = hp.read_alm('%s/%s' % (cmb_data_path, fname_alms))
-    kappa_alms[~np.isfinite(kappa_alms)] = 0
-    for nzbin in range(nzbins):
-        print('## generating correlated alms ...')
-        # generate galaxy alm that are correlated
-        # try for just one bin
-        gal_density_alm = generate_correlated_alm(input_alm_f1=kappa_alms,
-                                                  Clf1f1=c_gg[nzbin][nzbin],
-                                                  Clf2f2=c_kk,
-                                                  Clf1f2=c_kg[nzbin], seed=nzbin)
+    # check if this fname is already dealt with
+    alms_files = [ f for f in os.listdir(outdir_data) if \
+                  f.endswith('fits') and f.__contains__(fname_tag)]
 
-        # construct the map from the alms
-        gal_density_map = hp.alm2map(gal_density_alm, nside=nside)
+    if (len(alms_files) == 2) and not overwrite_alms:
+        # okay already have the alms for this sim
+        print('\n## alms already saved for sim %s: %sth' % (fname_tag, i+1))
+    else:
+        # okay run for this sim
+        print('\n## running things for sim %s: %sth' % (fname_tag, i+1))
+        # okay now read in the CMB alms
+        kappa_alms = hp.read_alm('%s/%s' % (cmb_data_path, fname_alms))
+        kappa_alms[~np.isfinite(kappa_alms)] = 0
+        for nzbin in range(nzbins):
+            print('## generating correlated alms ...')
+            # generate galaxy alm that are correlated
+            # try for just one bin
+            gal_density_alm = generate_correlated_alm(input_alm_f1=kappa_alms,
+                                                      Clf1f1=c_gg[nzbin][nzbin],
+                                                      Clf2f2=c_kk,
+                                                      Clf1f2=c_kg[nzbin], seed=nzbin)
 
-        if i == 0: save_plot = True
-        else: save_plot = False
+            # construct the map from the alms
+            gal_density_map = hp.alm2map(gal_density_alm, nside=nside)
 
-        plot_skymap(map_in=gal_density_map, title='theory, correlated g',
-                    data_label='density', show_plot=False, save_plot=save_plot,
+            if i == 0: save_plot = True
+            else: save_plot = False
+
+            plot_skymap(map_in=gal_density_map, title='theory, correlated g',
+                        data_label='density', show_plot=False, save_plot=save_plot,
+                        outdir=outdir_plots, file_tag='')
+
+            print('## adding fakelss ...')
+            # add fake lss
+            gal_density_wfakelss_map = add_fakelss(theory_density_map=gal_density_map,
+                                                   fakelss_map_path=fakelss_map_path,
+                                                   show_plot=False, save_plot=save_plot,
+                                                   outdir=outdir_plots)
+
+            if joint_mask is None:
+                # set up lsst mask
+                if lsst_mask is None:
+                    lsst_mask = 1 - gal_density_wfakelss_map.mask.astype(int)
+                # set up the lensing mask
+                if lensing_mask is None:
+                    lensing_mask = enmap.read_map(lensing_mask_path)
+                    lensing_mask = reproject.healpix_from_enmap(lensing_mask, lmax=6000, nside=nside)
+                    lensing_mask[lensing_mask<0.99] = 0
+                # set up the joint mask
+                joint_mask = lensing_mask * lsst_mask
+
+            # update the mask
+            gal_density_wfakelss_map.mask = joint_mask.copy()
+            plot_skymap(map_in=gal_density_wfakelss_map,
+                        title='correlated g + fakelss; joint mask',
+                        data_label='density', show_plot=False, save_plot=save_plot,
+                        outdir=outdir_plots, file_tag='')
+
+            gal_density_wfakelss_alms = hp.map2alm(gal_density_wfakelss_map, lmax=lmax)
+
+            fname = 'alms_correlated-g-wfakelss-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
+            hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname),
+                                  alms=gal_density_wfakelss_alms, overwrite=True)
+            print('## saved alms in %s' % fname)
+
+        # mask the kappa map too
+        kappa_map = hp.alm2map(kappa_alms, nside=nside) * joint_mask
+        plot_skymap(map_in=kappa_map, title='theory, kappa', data_label='kappa',
+                    show_plot=False, save_plot=save_plot,
                     outdir=outdir_plots, file_tag='')
-
-        print('## adding fakelss ...')
-        # add fake lss
-        gal_density_wfakelss_map = add_fakelss(theory_density_map=gal_density_map,
-                                               fakelss_map_path=fakelss_map_path,
-                                               show_plot=False, save_plot=save_plot,
-                                               outdir=outdir_plots)
-
-        if joint_mask is None:
-            # set up lsst mask
-            if lsst_mask is None:
-                lsst_mask = 1 - gal_density_wfakelss_map.mask.astype(int)
-            # set up the lensing mask
-            if lensing_mask is None:
-                lensing_mask = enmap.read_map(lensing_mask_path)
-                lensing_mask = reproject.healpix_from_enmap(lensing_mask, lmax=6000, nside=nside)
-                lensing_mask[lensing_mask<0.99] = 0
-            # set up the joint mask
-            joint_mask = lensing_mask * lsst_mask
-            
-        # update the mask
-        gal_density_wfakelss_map.mask = joint_mask.copy()
-        plot_skymap(map_in=gal_density_wfakelss_map,
-                    title='correlated g + fakelss; joint mask',
-                    data_label='density', show_plot=False, save_plot=save_plot,
-                    outdir=outdir_plots, file_tag='')
-        
-        gal_density_wfakelss_alms = hp.map2alm(gal_density_wfakelss_map, lmax=lmax)
-        
-        fname = 'alms_correlated-g-wfakelss-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
-        hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname),
-                              alms=gal_density_wfakelss_alms, overwrite=True)
+        kappa_alms = hp.map2alm(kappa_map, lmax=lmax)
+        fname = 'alms_kappa-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
+        hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname), alms=kappa_alms,
+                              overwrite=True)
         print('## saved alms in %s' % fname)
-        
-    # mask the kappa map too    
-    kappa_map = hp.alm2map(kappa_alms, nside=nside) * joint_mask
-    plot_skymap(map_in=kappa_map, title='theory, kappa', data_label='kappa',
-                show_plot=False, save_plot=save_plot,
-                outdir=outdir_plots, file_tag='')
-    kappa_alms = hp.map2alm(kappa_map, lmax=lmax)
-    fname = 'alms_kappa-jmasked_%s-%s.fits' % (cmb_data_tag, fname_tag)
-    hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname), alms=kappa_alms,
-                          overwrite=True)
-    print('## saved alms in %s' % fname)
-    print('## time taken: %.2f min' % ((time.time() - start_time0)/60.))
+        print('## time taken: %.2f min' % ((time.time() - start_time0)/60.))
 
 print('## time taken: %.2f min' % ((time.time() - start_time)/60.))
