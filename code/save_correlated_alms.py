@@ -10,11 +10,25 @@ from utils_plot import plot_power_spectrum, plot_skymap
 from add_fakelss import add_fakelss
 from settings import *
 
+# ------------------------------------------------------------------------------
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option('--cmb_data_type',
+                  dest='cmb_data_type',
+                  help='Must be TT, mv, mvpol.')
+parser.add_option('--grecon',
+                  action='store_true', dest='grecon', default=False,
+                  help='Using grecon.')
+# ------------------------------------------------------------------------------
+(options, args) = parser.parse_args()
+print('\n## inputs: %s' % options)
+# read in the inputs
+grecon = options.grecon
+cmb_data_type = options.cmb_data_type
+
 outdir = '/global/cscratch1/sd/awan/soxlsst/output/'
 
 one_sim_only = False
-grecon = True
-cmb_data_type = 'TT' # must be one of the following: 'TT', 'mv', 'mvpol'
 cmb_data_path = '/global/cscratch1/sd/msyriac/data/depot/solsst/'
 lensing_mask_path = '%s/v1_mask.fits' % cmb_data_path
 overwrite_alms = False

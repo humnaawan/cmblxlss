@@ -4,11 +4,23 @@ import healpy as hp
 import time
 
 from settings import *
+# ------------------------------------------------------------------------------
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option('--cmb_data_type',
+                  dest='cmb_data_type',
+                  help='Must be TT, mv, mvpol.')
+parser.add_option('--grecon',
+                  action='store_true', dest='grecon', default=False,
+                  help='Using grecon.')
+# ------------------------------------------------------------------------------
+(options, args) = parser.parse_args()
+print('\n## inputs: %s' % options)
+# read in the inputs
+grecon = options.grecon
+cmb_data_type = options.cmb_data_type
 
 outdir = '/global/cscratch1/sd/awan/soxlsst/output/'
-
-grecon = False
-cmb_data_type = 'mv' # must be one of the following: 'TT', 'mv', 'mvpol'
 
 cmb_data_tag = ''
 if grecon:
