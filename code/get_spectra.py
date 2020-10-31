@@ -31,16 +31,11 @@ else:
 cmb_data_tag += '-%s' % cmb_data_type
 
 outdir_data = '%s/interm-data_%s' % (outdir, cmb_data_tag)
-if grecon:
-    alms_files = [ f for f in os.listdir(outdir_data) if \
-                  f.endswith('fits') and f.__contains__('grecon')]
-else:
-    alms_files = [ f for f in os.listdir(outdir_data) if \
-                  f.endswith('fits') and not f.__contains__('grecon')]
+
+alms_files = [ f for f in os.listdir(outdir_data) if f.endswith('fits')]
 
 kappa_files = [ f for f in alms_files if f.__contains__('kappa') ]
 
-nside = 256
 lmax = 4000
 
 for i, kappa_file in enumerate( kappa_files ):
@@ -106,7 +101,7 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlabel('$\ell$')
 ax.set_ylabel('$C_\ell$')
-ax.set_ylim([1e-13, 1e-5])
+#ax.set_ylim([1e-13, 1e-5])
 #plt.ylabel(r'$\ell(\ell+1)C_\ell/(2\pi)$')
 ax.legend(bbox_to_anchor=(1,1))
 fname = 'plot_spectra_%s-sims_%s.png' % (len(kappa_files), cmb_data_tag)
