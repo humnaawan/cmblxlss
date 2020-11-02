@@ -193,14 +193,16 @@ for i, fname_alms in enumerate( fnames_alms ):
             if joint_mask is None:
                 # set up lsst mask
                 if lsst_mask is None:
-                    lsst_mask = 1 - gal_density_wfakelss_map.mask.astype(int)
+                    lsst_mask = gal_density_wfakelss_map.mask.astype(int)
                 # set up the lensing mask
                 if lensing_mask is None:
-                    lensing_mask = enmap.read_map(lensing_mask_path)
-                    lensing_mask = reproject.healpix_from_enmap(lensing_mask, lmax=6000, nside=nside)
-                    lensing_mask[lensing_mask<0.99] = 0
+                    lensing_mask_ = enmap.read_map(lensing_mask_path)
+                    lensing_mask_ = reproject.healpix_from_enmap(lensing_mask_,
+                                                                 lmax=6000, nside=nside)
+                    lensing_mask = np.ones_like(lensing_mask_)
+                    lensing_mask[lensing_mask_<0.99] = 0
                 # set up the joint mask
-                joint_mask = lensing_mask * lsst_mask
+                joint_mask = 1 + lensing_mask * (lsst_mask-1)
 
             # update the mask
             gal_density_wfakelss_map.mask = joint_mask.copy()
