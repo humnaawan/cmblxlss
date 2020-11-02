@@ -4,6 +4,7 @@ import healpy as hp
 import pyccl as ccl
 import time
 from pixell import reproject,enmap
+import numpy.ma as ma
 
 from helpers import get_dndz, generate_correlated_alm
 from utils_plot import plot_power_spectrum, plot_skymap
@@ -219,7 +220,11 @@ for i, fname_alms in enumerate( fnames_alms ):
             print('## saved alms in %s' % fname)
 
         # mask the kappa map too
-        kappa_map = hp.alm2map(kappa_alms, nside=nside) * joint_mask
+        kappa_map = hp.alm2map(kappa_alms, nside=nside)
+        kappa_map = kappa_map.view(ma.MaskedArray)
+        kappa_map.mask = joint_mask.copy()
+        kappa_map.fill_value = gal_density_wfakelss_map.fill_value
+
         plot_skymap(map_in=kappa_map, title='theory, kappa', data_label='kappa',
                     show_plot=False, save_plot=save_plot,
                     outdir=outdir_plots, file_tag='')
