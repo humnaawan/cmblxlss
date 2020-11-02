@@ -176,12 +176,12 @@ for i, fname_alms in enumerate( fnames_alms ):
 
             # construct the map from the alms
             gal_density_map = hp.alm2map(gal_density_alm, nside=nside)
-
             if i == 0: save_plot = True
             else: save_plot = False
 
             plot_skymap(map_in=gal_density_map, title='theory, correlated g',
-                        data_label='density', show_plot=False, save_plot=save_plot,
+                        data_label='gdensity-correlated-theory',
+                        show_plot=False, save_plot=save_plot,
                         outdir=outdir_plots, file_tag='')
 
             print('## adding fakelss ...')
@@ -209,7 +209,8 @@ for i, fname_alms in enumerate( fnames_alms ):
             gal_density_wfakelss_map.mask = joint_mask.copy()
             plot_skymap(map_in=gal_density_wfakelss_map,
                         title='correlated g + fakelss; joint mask',
-                        data_label='density', show_plot=False, save_plot=save_plot,
+                        data_label='gdensity-correlated-theory+fakelss+joint-mask',
+                        show_plot=False, save_plot=save_plot,
                         outdir=outdir_plots, file_tag='')
 
             gal_density_wfakelss_alms = hp.map2alm(gal_density_wfakelss_map, lmax=lmax)
@@ -233,6 +234,18 @@ for i, fname_alms in enumerate( fnames_alms ):
         hp.fitsfunc.write_alm(filename='%s/%s' % (outdir_data, fname), alms=kappa_alms,
                               overwrite=True)
         print('## saved alms in %s' % fname)
+
+        # plot some more things
+        plot_skymap(map_in=lsst_mask, title='lsst_mask', data_label='lsst-mask',
+                    show_plot=False, save_plot=save_plot,
+                    outdir=outdir_plots, file_tag='')
+        plot_skymap(map_in=lensing_mask, title='lensing_mask', data_label='lensing-mask',
+                    show_plot=False, save_plot=save_plot,
+                    outdir=outdir_plots, file_tag='')
+        plot_skymap(map_in=joint_mask, title='joint_mask', data_label='joint-mask',
+                    show_plot=False, save_plot=save_plot,
+                    outdir=outdir_plots, file_tag='')
+
         print('## time taken: %.2f min' % ((time.time() - start_time0)/60.))
 
 print('## time taken: %.2f min' % ((time.time() - start_time)/60.))
