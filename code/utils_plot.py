@@ -101,37 +101,50 @@ def plot_skymap(map_in, title, data_label,
         if not (file_tag == ''):
             file_tag = '_%s' % file_tag
     # check if input map is masked
-    if not ma.is_masked(map_in): # construct a masked array
-        map_in = map_in.view(ma.MaskedArray)
-        map_in.mask = [False] * len(map_in.data)
-        map_in.mask[abs(map_in.data) < 1e-15] = True # essentially mask out tiny numbers
-        map_in.fill_value = np.nan
-    # get the nside for this map
-    nside = hp.npix2nside(len(map_in.data))
-    # set up the cmap and the background (dont way anything 'behind' the skymap)
-    #cmap = cm.viridis
-    #cmap.set_under('w')
+    if ma.is_masked(map_in):
+        # get the nside for this map
+        nside = hp.npix2nside(len(map_in.data))
+        # set up the colorbar
+        in_survey = np.where(map_in.mask == False)[0]
+        if len(in_survey) == 0:
+            raise ValueError('everything is masked?!?!?!')
+        data_to_consider = map_in.data[in_survey]
+    else:
+        nside = hp.npix2nside(len(map_in))
+        data_to_consider = map_in
+
+    if len(np.unique(data_to_consider)) == 2:
+        # i.e. a binary map
+        stddev = 0
+    else:
+        # set up the colorbar
+        median = np.nanmedian(data_to_consider)
+        stddev = np.nanstd(data_to_consider)
+
     cmap = copy.copy(mpl.cm.get_cmap("viridis"))
-    # set up the colorbar
-    in_survey = np.where(map_in.mask == False)[0]
-    median = np.nanmedian(map_in.data[in_survey])
-    stddev = np.nanstd(map_in.data[in_survey])
     # figure out the ticks for the colorbar
     nticks = 5
     if stddev == 0:
-        color_min, color_max = 0, 1
+        color_min, color_max = min(data_to_consider), max(data_to_consider)
     else:
         color_min = median - 1.5 * stddev
         color_max = median + 1.5 * stddev
+
     increment = (color_max - color_min) / float(nticks)
     ticks = np.arange(color_min + increment, color_max, increment)
+
     # plot
-    hp.mollview(map_in.filled(map_in.fill_value), flip='astro', rot=(0,0,0), cmap=cmap,
+    if ma.is_masked(map_in):
+        to_plot = map_in.filled(map_in.fill_value)
+    else:
+        to_plot = map_in
+
+    hp.mollview(to_plot, flip='astro', rot=(0,0,0), cmap=cmap,
                 min=color_min, max=color_max, title='', cbar=False)
     hp.graticule(dpar=20, dmer=20, verbose=False)
     plt.title('%s \nnside %s; min %.2e; max %.2e' % (title, nside,
-                                                     min(map_in.data),
-                                                     max(map_in.data)
+                                                     min(data_to_consider),
+                                                     max(data_to_consider)
                                                      ))
     im = plt.gca().get_images()[0]
     fig = plt.gcf()
